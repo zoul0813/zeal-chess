@@ -1,0 +1,13 @@
+.TH zeal-chess 1 "08 Jun 2025" zeal-chess "zeal-chess manual"
+.SH NAME
+zeal-chess \- Short description of the project
+.SH SYNOPSIS
+zeal-chess
+.SH DESCRIPTION
+Short description of the project
+.SH OPTIONS
+
+.SH SEE ALSO
+
+.SH BUGS
+No known bugs.
