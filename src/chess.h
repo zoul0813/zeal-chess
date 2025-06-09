@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #define EMPTY  0
 #define PAWN   1
 #define KNIGHT 2
@@ -66,3 +68,9 @@ void make_move(Move *m);
 void undo_move(Move *m);
 int parse_move(const char *str, Move *move);
 void pick_best_move(unsigned char side, Move* move);
+
+
+bool is_in_check(unsigned char side);
+bool has_legal_moves(unsigned char side);
+
+
