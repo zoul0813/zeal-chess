@@ -4,7 +4,6 @@
 #include <zos_vfs.h>
 #include <zos_sys.h>
 #include <zos_video.h>
-#include <zgdk.h>
 
 #include "conio.h"
 #include "input.h"
