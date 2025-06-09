@@ -2,44 +2,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <zos_video.h>
+
 #include "chess.h"
-#include "input.h"
+#include "conio.h"
 
 unsigned char board[128]; // 0x88 board, 16x8
-unsigned char side_to_move         = WHITE;
-const signed char knight_offsets[] = {-33, -31, -18, -14, 14, 18, 31, 33};
-const signed char king_offsets[]   = {-17, -16, -15, -1, 1, 15, 16, 17};
-
-int evaluate(void)
-{
-    int score = 0;
-    for (int i = 0; i < 128; i++) {
-        if (IS_ON_BOARD(i)) {
-            switch (board[i] & 7) {
-                case PAWN: score += (board[i] & WHITE) ? 10 : -10; break;
-                case KNIGHT: score += (board[i] & WHITE) ? 30 : -30; break;
-                case BISHOP: score += (board[i] & WHITE) ? 30 : -30; break;
-                case ROOK: score += (board[i] & WHITE) ? 50 : -50; break;
-                case QUEEN: score += (board[i] & WHITE) ? 90 : -90; break;
-                case KING: score += (board[i] & WHITE) ? 900 : -900; break;
-            }
-        }
-    }
-    return score;
-}
-
-int negamax(int depth)
-{
-    if (depth == 0)
-        return evaluate();
-    int max = -9999;
-    // For each legal move:
-    //   make_move();
-    //   int score = -negamax(depth - 1);
-    //   undo_move();
-    //   if (score > max) max = score;
-    return max;
-}
+unsigned char side_to_move = WHITE;
 
 void init_board(void)
 {
@@ -84,24 +54,68 @@ char piece_char(unsigned char piece)
         case ROOK: return 'R';
         case QUEEN: return 'Q';
         case KING: return 'K';
-        default: return '.';
+        default: return ' ';
     }
 }
 
 void print_board(void)
 {
+    gotoxy(0,0);
+    uint8_t color = COLOR_LIGHT;
+
+    // print the horizontal grid label
+    bgcolor(TEXT_COLOR_BLACK);
+    textcolor(TEXT_COLOR_LIGHT_GRAY);
+    puts("\n    abcdefgh");
+
     for (int rank = 7; rank >= 0; rank--) {
-        printf("%d ", rank + 1);
+
+        // print the vertical grid label
+        bgcolor(TEXT_COLOR_BLACK);
+        textcolor(TEXT_COLOR_LIGHT_GRAY);
+        putchar(CH_SPACE); putchar(CH_SPACE); putchar(CH_SPACE);
+        putchar(rank + 1 + 48);
+        fflush_stdout();
+
         for (int file = 0; file < 8; file++) {
             unsigned char p = board[INDEX(rank, file)];
             char c          = piece_char(p);
-            if (p & BLACK)
+            if (p & BLACK) {
                 c += 32; // lowercase for black
+                textcolor(TEXT_COLOR_BLACK);
+            } else {
+                textcolor(TEXT_COLOR_WHITE);
+            }
+
+            bgcolor(color);
             putchar(c);
+            fflush_stdout();
+
+            // alternate board cell colors
+            if (color == COLOR_LIGHT) color = COLOR_DARK;
+            else color = COLOR_LIGHT;
         }
-        putchar('\n');
+        fflush_stdout();
+
+        // print the vertical grid label
+        bgcolor(TEXT_COLOR_BLACK);
+        textcolor(TEXT_COLOR_LIGHT_GRAY);
+        putchar(rank + 1 + 48);
+        fflush_stdout();
+
+        // next row, reset bgcolor since ZVB will clear the line to bgcolor
+        bgcolor(TEXT_COLOR_BLACK);
+        putchar(CH_NEWLINE);
+
+        // alternate board cell colors for next row
+        if (color == COLOR_LIGHT) color = COLOR_DARK;
+        else color = COLOR_LIGHT;
     }
-    printf("  abcdefgh\n");
+
+    // print the horizontal grid label
+    bgcolor(TEXT_COLOR_BLACK);
+    textcolor(TEXT_COLOR_LIGHT_GRAY);
+    puts("    abcdefgh");
 }
 
 
@@ -129,16 +143,8 @@ unsigned char parse_square(const char* s)
 }
 
 // Handles human (White) move input and execution
-int human_move_turn(void)
+int human_move_turn(char* input)
 {
-    char input[16];
-
-    printf("\nWhite to move. Enter move (e.g. e2e4) or 'quit':\n");
-    if (!fgets(input, sizeof(input), DEV_STDIN)) {
-        printf("Input error or EOF\n");
-        return 0; // stop loop
-    }
-
     // Remove trailing newline if present
     int len = strlen(input);
     if (len > 0 && input[len - 1] == '\n') {
@@ -202,7 +208,8 @@ int human_move_turn(void)
 // Handles AI (Black) move generation and execution
 int ai_move_turn(void)
 {
-    printf("\nBlack (AI) thinking...\n");
+    gotoxy(0, 15);
+    puts("Black is thinking...");
 
     Move ai_move;
     pick_best_move(BLACK, &ai_move);
@@ -229,47 +236,11 @@ int ai_move_turn(void)
         }
     }
 
-    printf("AI moves from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
+    printf("Black moved from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
            1 + (ai_move.to >> 4));
 
     return 1;
 }
-
-// Main game loop
-void move_input_loop(void)
-{
-    while (1) {
-        int continue_loop = 0;
-
-        if (side_to_move == WHITE) {
-            continue_loop = human_move_turn();
-            side_to_move  = BLACK;
-        } else {
-            continue_loop = ai_move_turn();
-            side_to_move  = WHITE;
-        }
-
-        print_board();
-
-        if (is_in_check(side_to_move)) {
-            if (!has_legal_moves(side_to_move)) {
-                printf("%s is in checkmate. Game over!\n", side_to_move == WHITE ? "White" : "Black");
-                break;
-            } else {
-                printf("%s is in check.\n", side_to_move == WHITE ? "White" : "Black");
-            }
-        } else if (!has_legal_moves(side_to_move)) {
-            printf("Stalemate. Game over!\n");
-            break;
-        }
-
-
-        if (!continue_loop)
-            break;
-    }
-}
-
-
 
 int is_friendly(unsigned char piece, unsigned char side)
 {
@@ -577,56 +548,10 @@ int rank_char_to_index(char c)
     return -1;
 }
 
-// Parses move string into Move struct
-// Returns 1 on success, 0 on failure
-int parse_move(const char* str, Move* move)
-{
-    if (!str || !move)
-        return 0;
-
-    // Expected formats:
-    // e2e4 (4 chars) or e7e8q (5 chars promotion)
-
-    int len = 0;
-    while (str[len] != '\0' && len < 6) len++;
-
-    if (len < 4)
-        return 0;
-
-    int from_file = file_char_to_index(str[0]);
-    int from_rank = rank_char_to_index(str[1]);
-    int to_file   = file_char_to_index(str[2]);
-    int to_rank   = rank_char_to_index(str[3]);
-
-    if (from_file < 0 || from_rank < 0 || to_file < 0 || to_rank < 0)
-        return 0;
-
-    // Convert to 0x88 index
-    unsigned char from_sq = (from_rank << 4) | from_file;
-    unsigned char to_sq   = (to_rank << 4) | to_file;
-
-    move->from      = from_sq;
-    move->to        = to_sq;
-    move->promotion = 0;
-
-    if (len == 5) {
-        // Promotion character: q,r,b,n
-        char promo = tolower(str[4]);
-        switch (promo) {
-            case 'q': move->promotion = QUEEN; break;
-            case 'r': move->promotion = ROOK; break;
-            case 'b': move->promotion = BISHOP; break;
-            case 'n': move->promotion = KNIGHT; break;
-            default: return 0;
-        }
-    }
-
-    return 1;
-}
-
+Move moves[256];
 void pick_best_move(unsigned char side, Move* move)
 {
-    Move moves[256];
+    memset(moves, 0, sizeof(moves));
     Move best_move = {0, 0, 0, 0};
     int move_count = generate_legal_moves(side, moves, 256);
 
@@ -639,7 +564,7 @@ void pick_best_move(unsigned char side, Move* move)
         return;
     }
 
-    int best_score = -32767;  // minimum safe value
+    int best_score = -32767; // minimum safe value
 
     for (int i = 0; i < move_count; i++) {
         make_move(&moves[i]);

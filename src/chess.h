@@ -1,4 +1,8 @@
 #include <stdbool.h>
+#include <zos_video.h>
+
+#define COLOR_LIGHT TEXT_COLOR_DARK_GRAY
+#define COLOR_DARK  TEXT_COLOR_BROWN
 
 #define EMPTY  0
 #define PAWN   1
@@ -32,27 +36,19 @@ typedef struct {
 
 extern unsigned char board[128]; // 0x88 board, 16x8
 extern unsigned char side_to_move;
-extern const signed char knight_offsets[];
-extern const signed char king_offsets[];
 
-
-
-int evaluate(void);
-int negamax(int depth);
 void init_board(void);
 char piece_char(unsigned char piece);
 void print_board(void);
 
+int human_move_turn(char* input);
+int ai_move_turn(void);
 
 unsigned char parse_file(char c);
 unsigned char parse_rank(char c);
 unsigned char parse_square(const char *s);
-void move_input_loop(void);
-
 
 int is_friendly(unsigned char piece, unsigned char side);
-int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side);
-
 
 int is_valid_move(unsigned char from, unsigned char to, unsigned char side);
 int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side);
@@ -62,11 +58,9 @@ int is_valid_rook_move(unsigned char from, unsigned char to, unsigned char side)
 int is_valid_queen_move(unsigned char from, unsigned char to, unsigned char side);
 int is_valid_king_move(unsigned char from, unsigned char to, unsigned char side);
 
-
 int generate_legal_moves(unsigned char side, Move moves[], int max_moves);
 void make_move(Move *m);
 void undo_move(Move *m);
-int parse_move(const char *str, Move *move);
 void pick_best_move(unsigned char side, Move* move);
 
 
