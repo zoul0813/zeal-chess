@@ -14,6 +14,7 @@ int continue_loop = 0;
 char input[16];
 
 int main(void) {
+    lowvideo();
     clrscr();
     init_board();
     print_board();
@@ -54,6 +55,9 @@ int main(void) {
         if (!continue_loop)
             break;
     }
+
+    ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
+    print_board();
 
     return 0;
 }
