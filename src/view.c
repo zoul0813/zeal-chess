@@ -15,6 +15,7 @@
 #define TILE_PIECES_START   16
 #define PIECES_PALETTE      1
 #define MODERN_PALETTE      1
+#define HIGHLG_PALETTE      3
 
 static gfx_context s_gfx;
 static uint8_t     s_sprite_idx;
@@ -60,6 +61,15 @@ static const uint16_t s_board_palette[] = {
     [36] = 0xFF55,
     [37] = 0xFFF6,
 #endif
+
+    /* Highlighted palette */
+    [48] = 0x0000,  // unused
+    [49] = 0xf230,
+    [50] = 0xee00,
+    [51] = 0xed10,
+    [52] = 0xf113,
+    [53] = 0xf332,
+
 };
 
 static const uint8_t s_board_tilemap[] = {
@@ -206,11 +216,11 @@ void view_clear_pieces(void)
 }
 
 
-void view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
+uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 {
 
     if (type == EMPTY) {
-        return;
+        return 0xff;
     }
 
     const uint8_t y_flipped = 7 - y;
@@ -221,6 +231,7 @@ void view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
     const uint8_t start_tile = TILE_PIECES_START + ((type - 1) * TILE_PER_SPRITE);
 
     /* Top left part of the piece */
+    const uint8_t spr_index = s_sprite_idx;
     s_ram_sprites[s_sprite_idx].x = iso_x;
     s_ram_sprites[s_sprite_idx].y = iso_y;
     s_ram_sprites[s_sprite_idx].tile  = start_tile;
@@ -244,10 +255,33 @@ void view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
     s_ram_sprites[s_sprite_idx].tile  = start_tile + 3;
     s_ram_sprites[s_sprite_idx].flags = palette;
     s_sprite_idx++;
+
+    return spr_index;
 }
 
 
 void view_render_pieces(void)
 {
     gfx_sprite_render_array(&s_gfx, 0, s_ram_sprites, GFX_SPRITES_COUNT);
+}
+
+void view_select_piece(uint8_t index)
+{
+    if (index == 0xff) {
+        return;
+    }
+
+    gfx_sprite_set_flags(&s_gfx, index, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&s_gfx, index+1, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&s_gfx, index+2, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&s_gfx, index+3, HIGHLG_PALETTE << 4);
+}
+
+void view_deselect_piece(uint8_t index)
+{
+    if (index == 0xff) {
+        return;
+    }
+
+    gfx_sprite_render_array(&s_gfx, index, &s_ram_sprites[index], 4);
 }

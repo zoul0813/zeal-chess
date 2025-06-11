@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zos_errors.h>
 #include <zos_video.h>
+#include <zos_time.h>
 
 #include "chess.h"
 #include "view.h"
@@ -11,6 +13,7 @@
 
 /* FIXME: Why not have a 64-byte board? */
 unsigned char board[128]; // 0x88 board, 16x8
+static uint8_t gfx_board[128]; // 0x88 board, 16x8
 unsigned char side_to_move = WHITE;
 
 static void draw_pieces(void)
@@ -39,7 +42,7 @@ static void draw_pieces(void)
     for (uint8_t i = 0; i < sizeof(indexes); i++) {
         const uint8_t pos = indexes[i];
         const uint8_t piece = board[pos];
-        view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
+        gfx_board[pos] = view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
     }
 
     view_render_pieces();
@@ -82,6 +85,13 @@ void init_board(void)
     /* Initialize the view */
     view_init();
     draw_pieces();
+
+    /* Highlight one piece */
+    for (uint8_t i = 0; i <= 7; i++) {
+        view_select_piece(gfx_board[i]);
+        msleep(500);
+        view_deselect_piece(gfx_board[i]);
+    }
 }
 
 char piece_char(unsigned char piece)

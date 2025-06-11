@@ -16,7 +16,9 @@ char input[16];
 int main(void) {
     init_board();
 
-    while (1);
+    while (1) {
+
+    }
 
     while (1) {
 
