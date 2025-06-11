@@ -6,10 +6,43 @@
 #include <zos_video.h>
 
 #include "chess.h"
+#include "view.h"
 #include "conio.h"
 
+/* FIXME: Why not have a 64-byte board? */
 unsigned char board[128]; // 0x88 board, 16x8
 unsigned char side_to_move = WHITE;
+
+static void draw_pieces(void)
+{
+    /* Browse the board diagonally, from back to front */
+    static const uint8_t indexes[] = {
+        INDEX(7,7),
+        INDEX(7,6), INDEX(6,7),
+        INDEX(7,5), INDEX(6,6), INDEX(5,7),
+        INDEX(7,4), INDEX(6,5), INDEX(5,6), INDEX(4,7),
+        INDEX(7,3), INDEX(6,4), INDEX(5,5), INDEX(4,6), INDEX(3,7),
+        INDEX(7,2), INDEX(6,3), INDEX(5,4), INDEX(4,5), INDEX(3,6), INDEX(2,7),
+        INDEX(7,1), INDEX(6,2), INDEX(5,3), INDEX(4,4), INDEX(3,5), INDEX(2,6), INDEX(1,7),
+        INDEX(7,0), INDEX(6,1), INDEX(5,2), INDEX(4,3), INDEX(3,4), INDEX(2,5), INDEX(1,6), INDEX(0,7),
+        INDEX(6,0), INDEX(5,1), INDEX(4,2), INDEX(3,3), INDEX(2,4), INDEX(1,5), INDEX(0,6),
+        INDEX(5,0), INDEX(4,1), INDEX(3,2), INDEX(2,3), INDEX(1,4), INDEX(0,5),
+        INDEX(4,0), INDEX(3,1), INDEX(2,2), INDEX(1,3), INDEX(0,4),
+        INDEX(3,0), INDEX(2,1), INDEX(1,2), INDEX(0,3),
+        INDEX(2,0), INDEX(1,1), INDEX(0,2),
+        INDEX(1,0), INDEX(0,1),
+        INDEX(0,0)
+    };
+
+    view_clear_pieces();
+
+    for (uint8_t i = 0; i < sizeof(indexes); i++) {
+        const uint8_t pos = indexes[i];
+        const uint8_t piece = board[pos];
+        view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
+    }
+}
+
 
 void init_board(void)
 {
@@ -43,6 +76,10 @@ void init_board(void)
     for (int i = 0; i < 8; i++) {
         board[INDEX(6, i)] = BLACK | PAWN;
     }
+
+    /* Initialize the view */
+    view_init();
+    draw_pieces();
 }
 
 char piece_char(unsigned char piece)

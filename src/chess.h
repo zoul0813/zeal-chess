@@ -23,6 +23,8 @@
 #define BLACK 16
 
 #define INDEX(rank, file) (((rank) << 4) | (file))
+#define GET_Y(pos)        ((pos) & 7)
+#define GET_X(pos)        (((pos) >> 4) & 7)
 #define IS_ON_BOARD(sq) (((sq) & 0x88) == 0)
 
 typedef struct {

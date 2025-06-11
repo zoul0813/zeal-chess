@@ -8,15 +8,15 @@
 #include "conio.h"
 #include "input.h"
 #include "chess.h"
+#include "view.h"
 
 int continue_loop = 0;
 char input[16];
 
 int main(void) {
-    lowvideo();
-    clrscr();
     init_board();
-    print_board();
+
+    while (1);
 
     while (1) {
 
