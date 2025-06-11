@@ -14,20 +14,52 @@
 #define TILE_PER_SPRITE     4
 #define TILE_PIECES_START   16
 #define PIECES_PALETTE      1
+#define MODERN_PALETTE      1
 
 static gfx_context s_gfx;
 static uint8_t     s_sprite_idx;
+static gfx_sprite  s_ram_sprites[GFX_SPRITES_COUNT];
 
 /* 4 16-bit colors for the board palette */
-static const uint8_t s_board_palette[] = {
+static const uint16_t s_board_palette[] = {
     /* 4 colors for the board */
-    0x28, 0x42, 0x84, 0x49, 0xe8, 0x7a, 0x32, 0xde,
-    /* 12 dummy colors */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    /* 5 colors for the pieces + transparency */
-    0x00, 0x00, 0xe7, 0x31, 0x6f, 0x52, 0x7c, 0x5b, 0x5e, 0x5d, 0xfe, 0x5e
+    [0] = 0x4228,
+    [1] = 0x4984,
+    [2] = 0x7ae8,
+    [3] = 0xde32,
+#if MODERN_PALETTE
+    /* Black palette */
+    [16] = 0x0000,
+    [17] = 0x31e7,
+    [18] = 0x2104,
+    [19] = 0x9452,
+    [20] = 0x732e,
+    [21] = 0x39a8,
+
+    /* White palette */
+    [32] = 0x0000,
+    [33] = 0x31e7,
+    [34] = 0x5aaa,
+    [35] = 0xffff,
+    [36] = 0x9492,
+    [37] = 0xdefd,
+#else
+    /* Brown palette */
+    [16] = 0x0000,  // unused
+    [17] = 0x632c,  // Deep brown
+    [18] = 0x842f,  // Dark wood
+    [19] = 0xd5b4,  // Mid brown
+    [20] = 0xcd72,
+    [21] = 0xfed6,  // Highlight
+
+    /* Beige palette */
+    [32] = 0x0000,  // unused
+    [33] = 0xB52D,
+    [34] = 0xD675,
+    [35] = 0xF718,
+    [36] = 0xFF55,
+    [37] = 0xFFF6,
+#endif
 };
 
 static const uint8_t s_board_tilemap[] = {
@@ -132,7 +164,7 @@ void view_init(void)
     gfx_enable_screen(0);
 
     /* Load the palette */
-    if (gfx_palette_load(&s_gfx, s_board_palette, sizeof(s_board_palette), 0)) {
+    if (gfx_palette_load(&s_gfx, (uint8_t*) s_board_palette, sizeof(s_board_palette), 0)) {
         exit(1);
     }
 
@@ -168,7 +200,7 @@ void view_init(void)
 void view_clear_pieces(void)
 {
     for (uint8_t i = 0; i < GFX_SPRITES_COUNT; i++) {
-        gfx_sprite_set_x(&s_gfx, i, 0);
+        s_ram_sprites[i].x = 0;
     }
     s_sprite_idx = 0;
 }
@@ -176,42 +208,46 @@ void view_clear_pieces(void)
 
 void view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 {
+
     if (type == EMPTY) {
         return;
     }
 
     const uint8_t y_flipped = 7 - y;
-    /* Sprites positions start at 16 */
-    // const uint16_t iso_x = ((uint16_t) (x - y_flipped) * (TILE_SIZE / 2)) + 16 + 87;
-    /* Teh board has an offset on screen, so -62 */
-    // const uint16_t iso_y = ((uint16_t) (x + y_flipped) * (TILE_SIZE / 2)) + 16 - 12;
+    const uint8_t palette = (PIECES_PALETTE + ((color & 1) ? 1 : 0)) << 4;
     const uint16_t iso_x = 160 + (y - x) * 16;
     const uint16_t iso_y = 172 - (y + x) * 8;
 
     const uint8_t start_tile = TILE_PIECES_START + ((type - 1) * TILE_PER_SPRITE);
 
     /* Top left part of the piece */
-    gfx_sprite_set_x(&s_gfx, s_sprite_idx, iso_x);
-    gfx_sprite_set_y(&s_gfx, s_sprite_idx, iso_y);
-    gfx_sprite_set_tile(&s_gfx, s_sprite_idx, start_tile);
-    gfx_sprite_set_flags(&s_gfx, s_sprite_idx, PIECES_PALETTE << 4);
+    s_ram_sprites[s_sprite_idx].x = iso_x;
+    s_ram_sprites[s_sprite_idx].y = iso_y;
+    s_ram_sprites[s_sprite_idx].tile  = start_tile;
+    s_ram_sprites[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Top right part of the piece */
-    gfx_sprite_set_x(&s_gfx, s_sprite_idx, iso_x + 16);
-    gfx_sprite_set_y(&s_gfx, s_sprite_idx, iso_y);
-    gfx_sprite_set_tile(&s_gfx, s_sprite_idx, start_tile + 1);
-    gfx_sprite_set_flags(&s_gfx, s_sprite_idx, PIECES_PALETTE << 4);
+    s_ram_sprites[s_sprite_idx].x = iso_x + 16;
+    s_ram_sprites[s_sprite_idx].y = iso_y;
+    s_ram_sprites[s_sprite_idx].tile  = start_tile + 1;
+    s_ram_sprites[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Bottom left part of the piece */
-    gfx_sprite_set_x(&s_gfx, s_sprite_idx, iso_x);
-    gfx_sprite_set_y(&s_gfx, s_sprite_idx, iso_y + 16);
-    gfx_sprite_set_tile(&s_gfx, s_sprite_idx, start_tile + 2);
-    gfx_sprite_set_flags(&s_gfx, s_sprite_idx, PIECES_PALETTE << 4);
+    s_ram_sprites[s_sprite_idx].x = iso_x;
+    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
+    s_ram_sprites[s_sprite_idx].tile  = start_tile + 2;
+    s_ram_sprites[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Bottom right part of the piece */
-    gfx_sprite_set_x(&s_gfx, s_sprite_idx, iso_x + 16);
-    gfx_sprite_set_y(&s_gfx, s_sprite_idx, iso_y + 16);
-    gfx_sprite_set_tile(&s_gfx, s_sprite_idx, start_tile + 3);
-    gfx_sprite_set_flags(&s_gfx, s_sprite_idx, PIECES_PALETTE << 4);
+    s_ram_sprites[s_sprite_idx].x = iso_x + 16;
+    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
+    s_ram_sprites[s_sprite_idx].tile  = start_tile + 3;
+    s_ram_sprites[s_sprite_idx].flags = palette;
     s_sprite_idx++;
+}
+
+
+void view_render_pieces(void)
+{
+    gfx_sprite_render_array(&s_gfx, 0, s_ram_sprites, GFX_SPRITES_COUNT);
 }

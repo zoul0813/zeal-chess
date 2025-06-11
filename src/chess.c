@@ -41,6 +41,8 @@ static void draw_pieces(void)
         const uint8_t piece = board[pos];
         view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
     }
+
+    view_render_pieces();
 }
 
 
