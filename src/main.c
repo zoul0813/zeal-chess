@@ -113,6 +113,7 @@ static void controller_handle_move(uint16_t input1)
     } else if (BUTTON1_B) {
         /* Commit the move */
         memcpy(the_board, s_cpy_board, sizeof(the_board));
+        view_draw(the_board);
         s_fsm_state = FSM_SELECTING;
     } else if (BUTTON1_A) {
         /* Cancel the move */
