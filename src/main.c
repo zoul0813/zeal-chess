@@ -121,8 +121,9 @@ static void controller_handle_move(uint16_t input1)
 
     if (new_selected != 0xff) {
         debug = new_selected;
-        s_cpy_board[new_selected] = s_cpy_board[s_cpy_selected];
-        s_cpy_board[s_cpy_selected] = 0;
+        uint8_t* piece = &s_cpy_board[s_cpy_selected];
+        s_cpy_board[new_selected] = *piece;
+        *piece = 0;
         s_cpy_selected = new_selected;
         view_draw(s_cpy_board);
         view_select_piece(the_board_gfx[new_selected]);
