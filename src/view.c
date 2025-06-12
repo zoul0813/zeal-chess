@@ -21,7 +21,7 @@
 static gfx_context s_gfx;
 static uint8_t     s_sprite_idx;
 static gfx_sprite  s_ram_sprites[GFX_SPRITES_COUNT];
-uint8_t* gfx_board; // 0x88 board, 16x8
+static uint8_t*    s_gfx_board; // 0x88 board, 16x8
 
 /* 4 16-bit colors for the board palette */
 static const uint16_t s_board_palette[] = {
@@ -167,7 +167,7 @@ __pieces_tileset_end:
 
 void view_init(uint8_t *the_board)
 {
-    gfx_board = the_board;
+    s_gfx_board = the_board;
     uint8_t empty[GFX_WIDTH];
 
     if (gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_4BIT, &s_gfx)) {
@@ -209,7 +209,7 @@ void view_init(uint8_t *the_board)
     gfx_enable_screen(1);
 }
 
-void view_draw(void)
+void view_draw(const uint8_t* board)
 {
     /* Browse the board diagonally, from back to front */
     static const uint8_t indexes[] = {
@@ -235,7 +235,7 @@ void view_draw(void)
     for (uint8_t i = 0; i < sizeof(indexes); i++) {
         const uint8_t pos = indexes[i];
         const uint8_t piece = board[pos];
-        gfx_board[pos] = view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
+        s_gfx_board[pos] = view_place_piece(GET_X(pos), GET_Y(pos), piece & 0x7, piece >> 3);
     }
 
     view_render_pieces();
@@ -303,7 +303,7 @@ void view_select_piece(uint8_t index)
         return;
     }
 
-    gfx_sprite_set_flags(&s_gfx, index, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&s_gfx, index+0, HIGHLG_PALETTE << 4);
     gfx_sprite_set_flags(&s_gfx, index+1, HIGHLG_PALETTE << 4);
     gfx_sprite_set_flags(&s_gfx, index+2, HIGHLG_PALETTE << 4);
     gfx_sprite_set_flags(&s_gfx, index+3, HIGHLG_PALETTE << 4);

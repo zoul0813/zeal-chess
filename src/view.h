@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 void view_init(uint8_t *the_board);
-void view_draw(void);
+void view_draw(const uint8_t* board);
 void view_clear_pieces(void);
 uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color);
 void view_render_pieces(void);
