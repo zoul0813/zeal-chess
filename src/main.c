@@ -7,6 +7,9 @@
 #include <zos_video.h>
 #include <zos_keyboard.h>
 
+#include <zgdk/input.h>
+
+#include "main.h"
 #include "conio.h"
 #include "input.h"
 #include "chess.h"
@@ -32,6 +35,9 @@ static uint8_t s_selected = 0;
 static uint8_t s_cpy_selected = 0;
 /* Current FSM state */
 static uint8_t s_fsm_state = FSM_SELECTING;
+
+uint16_t input1_prev = 0;
+zos_err_t err;
 
 __sfr __at(0x80) debug;
 
@@ -67,19 +73,19 @@ static uint8_t find_cell(uint8_t* board, uint8_t selected, uint8_t dir, uint8_t 
     return 0xff;
 }
 
-static void controller_handle_selection(uint8_t key)
+static void controller_handle_selection(uint16_t input1)
 {
     uint8_t new_selected = 0xff;
 
-    if (key == KB_RIGHT_ARROW) {
+    if (RIGHT1) {
         new_selected = find_cell(the_board, s_selected, DIR_RIGHT, 0);
-    } else if (key == KB_LEFT_ARROW) {
+    } else if (LEFT1) {
         new_selected = find_cell(the_board, s_selected, DIR_LEFT, 0);
-    } else if (key == KB_UP_ARROW) {
+    } else if (UP1) {
         new_selected = find_cell(the_board, s_selected, DIR_UP, 0);
-    } else if (key == KB_DOWN_ARROW) {
+    } else if (DOWN1) {
         new_selected = find_cell(the_board, s_selected, DIR_DOWN, 0);
-    } else if (key == KB_KEY_ENTER) {
+    } else if (BUTTON1_B) {
         enter_move_mode();
     }
 
@@ -91,20 +97,20 @@ static void controller_handle_selection(uint8_t key)
 }
 
 
-static void controller_handle_move(uint8_t key)
+static void controller_handle_move(uint16_t input1)
 {
     uint8_t new_selected = 0xff;
 
     /* TODO: Generate all the possible positions for the selected piece? */
-    if (key == KB_RIGHT_ARROW) {
+    if (RIGHT1) {
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_RIGHT, 1);
-    } else if (key == KB_LEFT_ARROW) {
+    } else if (LEFT1) {
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_LEFT, 1);
-    } else if (key == KB_UP_ARROW) {
+    } else if (UP1) {
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_UP, 1);
-    } else if (key == KB_DOWN_ARROW) {
+    } else if (DOWN1) {
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_DOWN, 1);
-    } else if (key == KB_KEY_BACKSPACE) {
+    } else if (BUTTON1_A) {
         /* Cancel the move */
         s_fsm_state = FSM_SELECTING;
         /* Render the former board */
@@ -127,11 +133,8 @@ static void controller_handle_move(uint8_t key)
 int main(void) {
     board_init(the_board);
 
-    /* Set the keyboard to RAW */
-    zos_err_t err = ioctl(DEV_STDIN, KB_CMD_SET_MODE, (void*) (KB_READ_NON_BLOCK | KB_MODE_RAW));
-    if (err) {
-        return 2;
-    }
+    /* Initialize Input */
+    err = input_init(true);
 
     /* Initialize the view */
     view_init(the_board_gfx);
@@ -140,22 +143,19 @@ int main(void) {
     view_select_piece(the_board_gfx[s_selected]);
 
     while (1) {
-        int size = 3;
-        uint8_t* kbdata = input;
-        zos_err_t ret = read(DEV_STDIN, kbdata, &size);
-        if (ret == ERR_SUCCESS && size != 0) {
-            if (*kbdata == KB_RELEASED) {
-                kbdata += 2;
-            }
+        uint16_t input1 = input_get();
+        if(input1 == input1_prev) continue;
+        input1_prev = input1;
 
-            switch (s_fsm_state) {
-                case FSM_SELECTING:
-                    controller_handle_selection(*kbdata);
-                    break;
-                case FSM_MOVING:
-                    controller_handle_move(*kbdata);
-                    break;
-            }
+        if(SELECT1) goto exit_game; // TODO: prompt confirm?
+
+        switch (s_fsm_state) {
+            case FSM_SELECTING:
+                controller_handle_selection(input1);
+                break;
+            case FSM_MOVING:
+                controller_handle_move(input1);
+                break;
         }
     }
 
@@ -196,6 +196,8 @@ int main(void) {
             break;
     }
 
+
+exit_game:
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
     print_board();
 

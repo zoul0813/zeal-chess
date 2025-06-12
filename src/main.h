@@ -25,6 +25,10 @@
 #define DOWN1   (input1 & BUTTON_DOWN)
 #define BUTTON1_B  (input1 & BUTTON_B)
 #define BUTTON1_A  (input1 & BUTTON_A)
+#define BUTTON1_Y  (input1 & BUTTON_Y)
+#define BUTTON1_X  (input1 & BUTTON_X)
+#define BUTTON1_L  (input1 & BUTTON_R)
+#define BUTTON1_R  (input1 & BUTTON_L)
 #define START1 (input1 & BUTTON_START)
 #define SELECT1 (input1 & BUTTON_SELECT)
 

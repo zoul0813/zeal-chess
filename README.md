@@ -2,6 +2,24 @@
 
 Short description of the project
 
+## Controls
+
+| Action | Keyboard | SNES   |
+| ------ | -------- | ------ |
+| Up     | Up       | Up     |
+| Down   | Down     | Down   |
+| Left   | Left     | Left   |
+| Right  | Right    | Right  |
+| Select | Z/Space  | B      |
+| Cancel | X        | A      |
+|        | A        | Y      |
+|        | S        | X      |
+| Quit   | R Shift  | Select |
+|        | Enter    | Start  |
+|        | Q        | L      |
+|        | W        | R      |
+
+
 ## Installation
 
 ## Building from source
