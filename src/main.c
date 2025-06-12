@@ -110,6 +110,10 @@ static void controller_handle_move(uint16_t input1)
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_UP, 1);
     } else if (DOWN1) {
         new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_DOWN, 1);
+    } else if (BUTTON1_B) {
+        /* Commit the move */
+        memcpy(the_board, s_cpy_board, sizeof(the_board));
+        s_fsm_state = FSM_SELECTING;
     } else if (BUTTON1_A) {
         /* Cancel the move */
         s_fsm_state = FSM_SELECTING;
@@ -149,6 +153,10 @@ int main(void) {
         input1_prev = input1;
 
         if(SELECT1) goto exit_game; // TODO: prompt confirm?
+        if(BUTTON1_Y) {
+            ai_move_turn();
+            view_draw(the_board);
+        }
 
         switch (s_fsm_state) {
             case FSM_SELECTING:
@@ -160,6 +168,7 @@ int main(void) {
         }
     }
 
+    /*
     while (1) {
 
         if (side_to_move == WHITE) {
@@ -196,7 +205,7 @@ int main(void) {
         if (!continue_loop)
             break;
     }
-
+    */
 
 exit_game:
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
