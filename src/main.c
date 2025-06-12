@@ -12,12 +12,24 @@
 
 int continue_loop = 0;
 char input[16];
+unsigned char the_board[128];
+uint8_t the_board_gfx[128];
 
 int main(void) {
-    init_board();
+    board_init(the_board);
+
+    /* Initialize the view */
+    view_init(the_board_gfx);
+    view_draw();
+
+    /* Highlight one piece */
+    for (uint8_t i = 0; i <= 7; i++) {
+        view_select_piece(the_board_gfx[i]);
+        msleep(500);
+        view_deselect_piece(the_board_gfx[i]);
+    }
 
     while (1) {
-
     }
 
     while (1) {

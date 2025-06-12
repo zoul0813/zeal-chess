@@ -36,10 +36,10 @@ typedef struct {
 } Move;
 
 
-extern unsigned char board[128]; // 0x88 board, 16x8
+extern unsigned char *board; // 0x88 board, 16x8
 extern unsigned char side_to_move;
 
-void init_board(void);
+void board_init(unsigned char *the_board);
 char piece_char(unsigned char piece);
 void print_board(void);
 
