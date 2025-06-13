@@ -8,8 +8,14 @@ ifndef ZVB_SDK_PATH
     $(error "Failure: ZVB_SDK_PATH variable not found. It must point to Zeal Video Board SDK path.")
 endif
 
-# include $(ZVB_SDK_PATH)/sdcc/base_sdcc.mk
+ifndef ZGDK_PATH
+	$(error "Failure: ZGDK_PATH variable not found. It must point to ZGDK path.")
+endif
+
 include $(ZGDK_PATH)/base_sdcc.mk
+
+all::
+	cp assets/*.zt* bin/
 
 run:
 	$(ZEAL_NATIVE_BIN) -H bin -r $(ZEAL_NATIVE_ROM) #-t tf.img -e eeprom.img

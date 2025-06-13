@@ -18,9 +18,7 @@
 #define MODERN_PALETTE      1
 #define HIGHLG_PALETTE      3
 
-static gfx_context s_gfx;
 static uint8_t     s_sprite_idx;
-static gfx_sprite  s_ram_sprites[GFX_SPRITES_COUNT];
 static uint8_t*    s_gfx_board; // 0x88 board, 16x8
 
 /* 4 16-bit colors for the board palette */
@@ -157,11 +155,11 @@ static const uint8_t s_board_tileset[] = {
 extern uint8_t _pieces_tileset_start;
 extern uint8_t _pieces_tileset_end;
 static void _pieces_tileset(void) {
-    __asm
-__pieces_tileset_start:
-    .incbin "assets/pieces_blue.zts"
-__pieces_tileset_end:
-    __endasm;
+    __asm__(
+        "__pieces_tileset_start:\n"
+        "   .incbin \"assets/pieces_blue.zts\"\n"
+        "__pieces_tileset_end:\n"
+    );
 }
 
 
@@ -170,14 +168,14 @@ void view_init(uint8_t *the_board)
     s_gfx_board = the_board;
     uint8_t empty[GFX_WIDTH];
 
-    if (gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_4BIT, &s_gfx)) {
+    if (gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_4BIT, &vctx)) {
         exit(1);
     }
 
     gfx_enable_screen(0);
 
     /* Load the palette */
-    if (gfx_palette_load(&s_gfx, (uint8_t*) s_board_palette, sizeof(s_board_palette), 0)) {
+    if (gfx_palette_load(&vctx, (uint8_t*) s_board_palette, sizeof(s_board_palette), 0)) {
         exit(1);
     }
 
@@ -185,7 +183,7 @@ void view_init(uint8_t *the_board)
     gfx_tileset_options options = {
         .compression = TILESET_COMP_2BIT,
     };
-    if (gfx_tileset_load(&s_gfx, s_board_tileset, sizeof(s_board_tileset), &options)) {
+    if (gfx_tileset_load(&vctx, s_board_tileset, sizeof(s_board_tileset), &options)) {
         exit(1);
     }
 
@@ -193,7 +191,7 @@ void view_init(uint8_t *the_board)
     options.compression = TILESET_COMP_NONE;
     options.from_byte = TILE_PIECES_START << 7; // Start at tile 16 (16 * 128);
     const int pieces_tileset_size = &_pieces_tileset_end - &_pieces_tileset_start;
-    if (gfx_tileset_load(&s_gfx, &_pieces_tileset_start, pieces_tileset_size, &options)) {
+    if (gfx_tileset_load(&vctx, &_pieces_tileset_start, pieces_tileset_size, &options)) {
         exit(1);
     }
 
@@ -201,8 +199,8 @@ void view_init(uint8_t *the_board)
     const uint8_t *tilemap = s_board_tilemap;
     memset(empty, 0, sizeof(empty));
     for (uint8_t i = 0; i < GFX_HEIGHT; i++) {
-        gfx_tilemap_load(&s_gfx, tilemap, GFX_WIDTH, 0, 0, i);
-        gfx_tilemap_load(&s_gfx, empty,   GFX_WIDTH, 1, 0, i);
+        gfx_tilemap_load(&vctx, tilemap, GFX_WIDTH, 0, 0, i);
+        gfx_tilemap_load(&vctx, empty,   GFX_WIDTH, 1, 0, i);
         tilemap += GFX_WIDTH;
     }
 
@@ -244,7 +242,7 @@ void view_draw(const uint8_t* board)
 void view_clear_pieces(void)
 {
     for (uint8_t i = 0; i < GFX_SPRITES_COUNT; i++) {
-        s_ram_sprites[i].x = 0;
+        SPRITES[i].x = 0;
     }
     s_sprite_idx = 0;
 }
@@ -265,28 +263,28 @@ uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 
     /* Top left part of the piece */
     const uint8_t spr_index = s_sprite_idx;
-    s_ram_sprites[s_sprite_idx].x = iso_x;
-    s_ram_sprites[s_sprite_idx].y = iso_y;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile;
-    s_ram_sprites[s_sprite_idx].flags = palette;
+    SPRITES[s_sprite_idx].x = iso_x;
+    SPRITES[s_sprite_idx].y = iso_y;
+    SPRITES[s_sprite_idx].tile  = start_tile;
+    SPRITES[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Top right part of the piece */
-    s_ram_sprites[s_sprite_idx].x = iso_x + 16;
-    s_ram_sprites[s_sprite_idx].y = iso_y;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile + 1;
-    s_ram_sprites[s_sprite_idx].flags = palette;
+    SPRITES[s_sprite_idx].x = iso_x + 16;
+    SPRITES[s_sprite_idx].y = iso_y;
+    SPRITES[s_sprite_idx].tile  = start_tile + 1;
+    SPRITES[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Bottom left part of the piece */
-    s_ram_sprites[s_sprite_idx].x = iso_x;
-    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile + 2;
-    s_ram_sprites[s_sprite_idx].flags = palette;
+    SPRITES[s_sprite_idx].x = iso_x;
+    SPRITES[s_sprite_idx].y = iso_y + 16;
+    SPRITES[s_sprite_idx].tile  = start_tile + 2;
+    SPRITES[s_sprite_idx].flags = palette;
     s_sprite_idx++;
     /* Bottom right part of the piece */
-    s_ram_sprites[s_sprite_idx].x = iso_x + 16;
-    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile + 3;
-    s_ram_sprites[s_sprite_idx].flags = palette;
+    SPRITES[s_sprite_idx].x = iso_x + 16;
+    SPRITES[s_sprite_idx].y = iso_y + 16;
+    SPRITES[s_sprite_idx].tile  = start_tile + 3;
+    SPRITES[s_sprite_idx].flags = palette;
     s_sprite_idx++;
 
     return spr_index;
@@ -294,7 +292,7 @@ uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 
 void view_render_pieces(void)
 {
-    gfx_sprite_render_array(&s_gfx, 0, s_ram_sprites, GFX_SPRITES_COUNT);
+    gfx_sprite_render_array(&vctx, 0, SPRITES, GFX_SPRITES_COUNT);
 }
 
 void view_select_piece(uint8_t index)
@@ -303,10 +301,10 @@ void view_select_piece(uint8_t index)
         return;
     }
 
-    gfx_sprite_set_flags(&s_gfx, index+0, HIGHLG_PALETTE << 4);
-    gfx_sprite_set_flags(&s_gfx, index+1, HIGHLG_PALETTE << 4);
-    gfx_sprite_set_flags(&s_gfx, index+2, HIGHLG_PALETTE << 4);
-    gfx_sprite_set_flags(&s_gfx, index+3, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&vctx, index+0, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&vctx, index+1, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&vctx, index+2, HIGHLG_PALETTE << 4);
+    gfx_sprite_set_flags(&vctx, index+3, HIGHLG_PALETTE << 4);
 }
 
 void view_deselect_piece(uint8_t index)
@@ -315,5 +313,5 @@ void view_deselect_piece(uint8_t index)
         return;
     }
 
-    gfx_sprite_render_array(&s_gfx, index, &s_ram_sprites[index], 4);
+    gfx_sprite_render_array(&vctx, index, &SPRITES[index], 4);
 }

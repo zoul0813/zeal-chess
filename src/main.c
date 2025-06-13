@@ -14,6 +14,7 @@
 #include "input.h"
 #include "chess.h"
 #include "view.h"
+#include "splash.h"
 
 #define DIR_LEFT    0
 #define DIR_RIGHT   1
@@ -28,6 +29,9 @@ static char input[16];
 static uint8_t the_board[128];
 static uint8_t s_cpy_board[128];
 static uint8_t the_board_gfx[128];
+
+gfx_context vctx;
+gfx_sprite  SPRITES[GFX_SPRITES_COUNT];
 
 /* Selected piece */
 static uint8_t s_selected = 0;
@@ -137,6 +141,10 @@ static void controller_handle_move(uint16_t input1)
 
 
 int main(void) {
+
+    splash_init();
+    splash_show();
+
     board_init(the_board);
 
     /* Initialize Input */

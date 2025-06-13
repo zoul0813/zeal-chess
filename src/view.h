@@ -1,6 +1,15 @@
 #pragma once
 
 #include <stdint.h>
+#include <zvb_gfx.h>
+
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 240
+#define WIDTH         20
+#define HEIGHT        15
+
+extern gfx_context vctx;
+extern gfx_sprite  SPRITES[GFX_SPRITES_COUNT];
 
 void view_init(uint8_t *the_board);
 void view_draw(const uint8_t* board);
