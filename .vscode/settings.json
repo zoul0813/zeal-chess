@@ -19,7 +19,6 @@
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
   "files.associations": {
-    "*.asm": "z80-macroasm",
-    "string.h": "c"
+    "*.asm": "z80-macroasm"
 }
 }
