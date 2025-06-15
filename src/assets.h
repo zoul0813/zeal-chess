@@ -22,9 +22,11 @@ extern const uint8_t s_board_tilemap[];
 extern const uint8_t s_board_tileset[];
 
 
-
 zos_err_t load_palette(gfx_context* ctx);
+
 zos_err_t load_board_tileset(gfx_context* ctx);
+zos_err_t load_board_tilemap(gfx_context* ctx);
+
 zos_err_t load_pieces_tileset(gfx_context* ctx);
 
 

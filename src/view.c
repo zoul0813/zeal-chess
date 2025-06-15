@@ -21,7 +21,6 @@ static uint8_t*    s_gfx_board; // 0x88 board, 16x8
 void view_init(uint8_t *the_board)
 {
     s_gfx_board = the_board;
-    uint8_t empty[GFX_WIDTH];
 
     if (gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_4BIT, &vctx)) {
         exit(1);
@@ -41,13 +40,8 @@ void view_init(uint8_t *the_board)
         exit(1);
     }
 
-    /* Load the tilemap (layer0) */
-    const uint8_t *tilemap = s_board_tilemap;
-    memset(empty, 0, sizeof(empty));
-    for (uint8_t i = 0; i < GFX_HEIGHT; i++) {
-        gfx_tilemap_load(&vctx, tilemap, GFX_WIDTH, 0, 0, i);
-        gfx_tilemap_load(&vctx, empty,   GFX_WIDTH, 1, 0, i);
-        tilemap += GFX_WIDTH;
+    if(load_board_tilemap(&vctx)) {
+        exit(1);
     }
 
     gfx_enable_screen(1);
