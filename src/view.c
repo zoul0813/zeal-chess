@@ -263,30 +263,20 @@ uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 
     const uint8_t start_tile = TILE_PIECES_START + ((type - 1) * TILE_PER_SPRITE);
 
-    /* Top left part of the piece */
+    /* Left part of the piece */
     const uint8_t spr_index = s_sprite_idx;
     s_ram_sprites[s_sprite_idx].x = iso_x;
     s_ram_sprites[s_sprite_idx].y = iso_y;
     s_ram_sprites[s_sprite_idx].tile  = start_tile;
     s_ram_sprites[s_sprite_idx].flags = palette;
+    s_ram_sprites[s_sprite_idx].options = 2;
     s_sprite_idx++;
-    /* Top right part of the piece */
+    /* Right part of the piece */
     s_ram_sprites[s_sprite_idx].x = iso_x + 16;
     s_ram_sprites[s_sprite_idx].y = iso_y;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile + 1;
-    s_ram_sprites[s_sprite_idx].flags = palette;
-    s_sprite_idx++;
-    /* Bottom left part of the piece */
-    s_ram_sprites[s_sprite_idx].x = iso_x;
-    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
     s_ram_sprites[s_sprite_idx].tile  = start_tile + 2;
     s_ram_sprites[s_sprite_idx].flags = palette;
-    s_sprite_idx++;
-    /* Bottom right part of the piece */
-    s_ram_sprites[s_sprite_idx].x = iso_x + 16;
-    s_ram_sprites[s_sprite_idx].y = iso_y + 16;
-    s_ram_sprites[s_sprite_idx].tile  = start_tile + 3;
-    s_ram_sprites[s_sprite_idx].flags = palette;
+    s_ram_sprites[s_sprite_idx].options = 2;
     s_sprite_idx++;
 
     return spr_index;
@@ -294,7 +284,7 @@ uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
 
 void view_render_pieces(void)
 {
-    gfx_sprite_render_array(&s_gfx, 0, s_ram_sprites, GFX_SPRITES_COUNT);
+    gfx_sprite_render_array(&s_gfx, 0, s_ram_sprites, GFX_SPRITES_COUNT / 2);
 }
 
 void view_select_piece(uint8_t index)
