@@ -311,6 +311,79 @@ static void test_ai_reports_no_move_by_status(void)
     require(!pick_best_move(BLACK, &ai_move), "AI reports no move in checkmate");
 }
 
+static void test_selection_finds_only_pieces_with_legal_moves(void)
+{
+    uint8_t test_board[128];
+
+    board_init(test_board);
+
+    require(find_legal_move_piece(INDEX(0, 0), WHITE, CHESS_DIR_RIGHT) == INDEX(0, 1),
+            "selection skips blocked rook and finds knight with legal moves");
+}
+
+static void test_selection_reports_no_selectable_piece(void)
+{
+    uint8_t test_board[128];
+
+    clear_board(test_board);
+    board[INDEX(0, 0)] = WHITE | KING;
+    board[INDEX(1, 1)] = BLACK | QUEEN;
+    board[INDEX(2, 2)] = BLACK | KING;
+
+    require(find_legal_move_piece(INDEX(0, 0), WHITE, CHESS_DIR_RIGHT) == 0xff,
+            "selection reports no white piece with legal moves");
+}
+
+static void test_selected_piece_targets_are_legal_only(void)
+{
+    uint8_t test_board[128];
+    Move moves[16];
+
+    board_init(test_board);
+
+    uint16_t count = generate_legal_moves_for_square(INDEX(0, 1), WHITE, moves, 16);
+    require(count == 2, "selected initial knight has exactly two legal targets");
+    require(move_exists(moves, count, INDEX(0, 1), INDEX(2, 0)), "target list includes knight move to a3");
+    require(move_exists(moves, count, INDEX(0, 1), INDEX(2, 2)), "target list includes knight move to c3");
+    require(!move_exists(moves, count, INDEX(0, 1), INDEX(1, 3)), "target list excludes illegal knight target");
+}
+
+static void test_selected_piece_target_preview_data_covers_capture_and_promotion(void)
+{
+    uint8_t test_board[128];
+    Move moves[16];
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(6, 0)] = WHITE | PAWN;
+    board[INDEX(6, 1)] = BLACK | ROOK;
+
+    uint16_t count = generate_legal_moves_for_square(INDEX(6, 0), WHITE, moves, 16);
+    require(move_exists(moves, count, INDEX(6, 0), INDEX(7, 0)), "target list includes promotion move");
+
+    for (uint16_t i = 0; i < count; i++) {
+        if (moves[i].to == INDEX(7, 0)) {
+            require(moves[i].promotion == QUEEN, "promotion target carries queen preview data");
+        }
+    }
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(3, 3)] = WHITE | BISHOP;
+    board[INDEX(5, 5)] = BLACK | KNIGHT;
+
+    count = generate_legal_moves_for_square(INDEX(3, 3), WHITE, moves, 16);
+    require(move_exists(moves, count, INDEX(3, 3), INDEX(5, 5)), "target list includes capture move");
+
+    for (uint16_t i = 0; i < count; i++) {
+        if (moves[i].to == INDEX(5, 5)) {
+            require(moves[i].captured == (BLACK | KNIGHT), "capture target carries captured-piece preview data");
+        }
+    }
+}
+
 int main(void)
 {
     test_board_init();
@@ -329,6 +402,10 @@ int main(void)
     test_ai_returns_legal_black_move();
     test_ai_never_leaves_black_king_in_check();
     test_ai_reports_no_move_by_status();
+    test_selection_finds_only_pieces_with_legal_moves();
+    test_selection_reports_no_selectable_piece();
+    test_selected_piece_targets_are_legal_only();
+    test_selected_piece_target_preview_data_covers_capture_and_promotion();
 
     puts("host chess tests passed");
     return 0;

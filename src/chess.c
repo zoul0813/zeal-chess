@@ -522,6 +522,29 @@ uint16_t generate_legal_moves_for_square(uint8_t from, uint8_t side, Move moves[
     return count;
 }
 
+uint8_t find_legal_move_piece(uint8_t selected, uint8_t side, uint8_t dir)
+{
+    uint8_t row = IS_ON_BOARD(selected) ? (selected & 0x70) : 0;
+    uint8_t col = IS_ON_BOARD(selected) ? (selected & 0x07) : 0;
+    Move moves[1];
+
+    for (uint8_t i = 0; i < 64; i++) {
+        if      (dir == CHESS_DIR_LEFT)  col = (col - 1) & 0x7;
+        else if (dir == CHESS_DIR_RIGHT) col = (col + 1) & 0x7;
+        else if (dir == CHESS_DIR_DOWN)  row = (row - 0x10) & 0x70;
+        else if (dir == CHESS_DIR_UP)    row = (row + 0x10) & 0x70;
+
+        uint8_t coord = row | col;
+        uint8_t piece = board[coord];
+        if (piece != EMPTY && is_friendly(piece, side) &&
+            generate_legal_moves_for_square(coord, side, moves, 1) > 0) {
+            return coord;
+        }
+    }
+
+    return 0xff;
+}
+
 void make_move(Move* m)
 {
     uint8_t piece = board[m->from];

@@ -23,6 +23,11 @@
 #define WHITE 8
 #define BLACK 16
 
+#define CHESS_DIR_LEFT  0
+#define CHESS_DIR_RIGHT 1
+#define CHESS_DIR_DOWN  2
+#define CHESS_DIR_UP    3
+
 #define INDEX(rank, file) (((rank) << 4) | (file))
 #define GET_Y(pos)        ((pos) & 7)
 #define GET_X(pos)        (((pos) >> 4) & 7)
@@ -71,6 +76,7 @@ uint8_t is_valid_king_move(uint8_t from, uint8_t to, uint8_t side);
 uint16_t generate_legal_moves(uint8_t side, Move moves[], uint16_t max_moves);
 uint8_t try_make_legal_move(uint8_t from, uint8_t to, uint8_t side, Move *move);
 uint16_t generate_legal_moves_for_square(uint8_t from, uint8_t side, Move moves[], uint16_t max_moves);
+uint8_t find_legal_move_piece(uint8_t selected, uint8_t side, uint8_t dir);
 void make_move(Move *m);
 void undo_move(Move *m);
 uint8_t pick_best_move(uint8_t side, Move* move);

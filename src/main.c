@@ -15,11 +15,6 @@
 #include "view.h"
 #include "splash.h"
 
-#define DIR_LEFT    0
-#define DIR_RIGHT   1
-#define DIR_DOWN    2
-#define DIR_UP      3
-
 #define FSM_SELECTING   0
 #define FSM_MOVING      1
 
@@ -38,6 +33,9 @@ static uint8_t s_selected = 0;
 static uint8_t s_cpy_selected = 0;
 /* Current FSM state */
 static uint8_t s_fsm_state = FSM_SELECTING;
+static Move s_legal_moves[256];
+static uint16_t s_legal_move_count = 0;
+static uint16_t s_selected_move_index = 0;
 
 uint16_t input1_prev = 0;
 zos_err_t err;
@@ -47,33 +45,31 @@ __sfr __at(0x80) debug;
 
 static void enter_move_mode(void)
 {
+    s_legal_move_count = generate_legal_moves_for_square(s_selected, WHITE, s_legal_moves, 256);
+    if (s_legal_move_count == 0)
+        return;
+
     memcpy(s_cpy_board, the_board, sizeof(the_board));
     s_fsm_state = FSM_MOVING;
     debug = s_selected;
     s_cpy_selected = s_selected;
+    s_selected_move_index = 0;
 }
 
-
-static uint8_t find_cell(uint8_t* board, uint8_t selected, uint8_t dir, uint8_t is_empty)
+static void preview_selected_move(void)
 {
-    uint8_t row = selected & 0x70;
-    uint8_t col = selected & 0x07;
+    Move *move = &s_legal_moves[s_selected_move_index];
+    uint8_t side = move->piece & (WHITE | BLACK);
+    uint8_t piece = move->promotion ? (side | move->promotion) : move->piece;
 
-    for (uint8_t i = 0; i < 15; i++) {
-        if      (dir == DIR_LEFT)  col = (col - 1) & 0x7;
-        else if (dir == DIR_RIGHT) col = (col + 1) & 0x7;
-        else if (dir == DIR_DOWN)  row = (row - 0x10) & 0x70;
-        else if (dir == DIR_UP)    row = (row + 0x10) & 0x70;
+    memcpy(s_cpy_board, the_board, sizeof(the_board));
+    s_cpy_board[move->from] = EMPTY;
+    s_cpy_board[move->to] = piece;
+    s_cpy_selected = move->to;
+    debug = move->to;
 
-        const uint8_t coord = row | col;
-        if ( (!is_empty && (board[coord] & WHITE) != 0) ||
-             ( is_empty && (board[coord] & 7) == EMPTY) )
-        {
-            return coord;
-        }
-    }
-
-    return 0xff;
+    view_draw(s_cpy_board);
+    view_select_piece(the_board_gfx[move->to]);
 }
 
 static void controller_handle_selection(uint16_t input1)
@@ -81,15 +77,17 @@ static void controller_handle_selection(uint16_t input1)
     uint8_t new_selected = 0xff;
 
     if (RIGHT1) {
-        new_selected = find_cell(the_board, s_selected, DIR_RIGHT, 0);
+        new_selected = find_legal_move_piece(s_selected, WHITE, CHESS_DIR_RIGHT);
     } else if (LEFT1) {
-        new_selected = find_cell(the_board, s_selected, DIR_LEFT, 0);
+        new_selected = find_legal_move_piece(s_selected, WHITE, CHESS_DIR_LEFT);
     } else if (UP1) {
-        new_selected = find_cell(the_board, s_selected, DIR_UP, 0);
+        new_selected = find_legal_move_piece(s_selected, WHITE, CHESS_DIR_UP);
     } else if (DOWN1) {
-        new_selected = find_cell(the_board, s_selected, DIR_DOWN, 0);
+        new_selected = find_legal_move_piece(s_selected, WHITE, CHESS_DIR_DOWN);
     } else if (BUTTON1_B) {
         enter_move_mode();
+        if (s_fsm_state == FSM_MOVING)
+            preview_selected_move();
     }
 
     if (new_selected != 0xff) {
@@ -102,22 +100,27 @@ static void controller_handle_selection(uint16_t input1)
 
 static void controller_handle_move(uint16_t input1)
 {
-    uint8_t new_selected = 0xff;
+    uint8_t changed_move = 0;
 
-    /* TODO: Generate all the possible positions for the selected piece? */
-    if (RIGHT1) {
-        new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_RIGHT, 1);
-    } else if (LEFT1) {
-        new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_LEFT, 1);
-    } else if (UP1) {
-        new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_UP, 1);
-    } else if (DOWN1) {
-        new_selected = find_cell(s_cpy_board, s_cpy_selected, DIR_DOWN, 1);
+    if (RIGHT1 || DOWN1) {
+        s_selected_move_index = (s_selected_move_index + 1) % s_legal_move_count;
+        changed_move = 1;
+    } else if (LEFT1 || UP1) {
+        if (s_selected_move_index == 0)
+            s_selected_move_index = s_legal_move_count - 1;
+        else
+            s_selected_move_index--;
+        changed_move = 1;
     } else if (BUTTON1_B) {
         /* Commit the move */
-        memcpy(the_board, s_cpy_board, sizeof(the_board));
+        Move move;
+        memcpy(&move, &s_legal_moves[s_selected_move_index], sizeof(move));
+        make_move(&move);
         view_draw(the_board);
         s_fsm_state = FSM_SELECTING;
+        s_selected = find_legal_move_piece(move.to, WHITE, CHESS_DIR_RIGHT);
+        if (s_selected != 0xff)
+            view_select_piece(the_board_gfx[s_selected]);
     } else if (BUTTON1_A) {
         /* Cancel the move */
         s_fsm_state = FSM_SELECTING;
@@ -127,15 +130,8 @@ static void controller_handle_move(uint16_t input1)
         return;
     }
 
-    if (new_selected != 0xff) {
-        debug = new_selected;
-        uint8_t* piece = &s_cpy_board[s_cpy_selected];
-        s_cpy_board[new_selected] = *piece;
-        *piece = 0;
-        s_cpy_selected = new_selected;
-        view_draw(s_cpy_board);
-        view_select_piece(the_board_gfx[new_selected]);
-    }
+    if (changed_move)
+        preview_selected_move();
 }
 
 
@@ -153,7 +149,9 @@ int main(void) {
     view_init(the_board_gfx);
     view_draw(the_board);
 
-    view_select_piece(the_board_gfx[s_selected]);
+    s_selected = find_legal_move_piece(INDEX(0, 0), WHITE, CHESS_DIR_RIGHT);
+    if (s_selected != 0xff)
+        view_select_piece(the_board_gfx[s_selected]);
 
     while (1) {
         uint16_t input1 = input_get();
