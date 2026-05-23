@@ -16,12 +16,12 @@
 void splash_init(void) {
     zos_err_t err;
 
+    gfx_enable_screen(0);
+
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_8BIT, &vctx);
     if(err != GFX_SUCCESS) {
         exit(1);
     }
-
-    gfx_enable_screen(0);
 
     memset(SPRITES, 0, sizeof(SPRITES));
     gfx_sprite_render_array(&vctx, 0, SPRITES, GFX_SPRITES_COUNT);

@@ -29,6 +29,5 @@ zos_err_t load_board_tilemap(gfx_context* ctx);
 
 zos_err_t load_pieces_tileset(gfx_context* ctx);
 
-
 zos_err_t load_splash(gfx_context* ctx);
 zos_err_t load_splash_tilemap(gfx_context* ctx);

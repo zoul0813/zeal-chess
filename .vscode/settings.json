@@ -1,10 +1,12 @@
 {
   "C_Cpp.default.includePath": [
     "${workspaceFolder}/include",
+    "${workspaceFolder}/src",
     "${env:ZVB_SDK_PATH}/include",
     "${env:ZVB_SDK_PATH}/sdcc",
     "${env:ZOS_PATH}/kernel_headers/sdcc/include",
-    "${env:ZGDK_PATH}/include"
+    "${env:ZGDK_PATH}/include",
+    "${env:COREUTILS_PATH}/libsrc/*/"
   ],
   "workbench.editorAssociations": {
     "*.ztp": "hexEditor.hexedit",
@@ -19,7 +21,6 @@
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
   "files.associations": {
-    "*.asm": "z80-macroasm",
-    "stdint.h": "c"
-}
+    "*.asm": "z80-macroasm"
+  }
 }

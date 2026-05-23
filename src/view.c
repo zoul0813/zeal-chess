@@ -5,6 +5,8 @@
 #include <zvb_gfx.h>
 #include <zos_sys.h>
 
+#include <zgdk.h>
+
 #include "assets.h"
 #include "view.h"
 #include "chess.h"
@@ -22,11 +24,11 @@ void view_init(uint8_t *the_board)
 {
     s_gfx_board = the_board;
 
+    gfx_enable_screen(0);
+
     if (gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_4BIT, &vctx)) {
         exit(1);
     }
-
-    gfx_enable_screen(0);
 
     if(load_palette(&vctx)) {
         exit(1);
@@ -39,6 +41,13 @@ void view_init(uint8_t *the_board)
     if(load_pieces_tileset(&vctx)) {
         exit(1);
     }
+
+    if(gfx_tileset_add_color_tile(&vctx, EMPTY_TILE, 0)) {
+        exit(1);
+    }
+
+
+    tilemap_fill(&vctx, LAYER1, 0, 0, 0, WIDTH, HEIGHT);
 
     if(load_board_tilemap(&vctx)) {
         exit(1);

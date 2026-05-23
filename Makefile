@@ -1,5 +1,9 @@
 BIN=chess.bin
 
+ZGDK_DEBUG=1
+ASSETS_OUTPUT=assets/archive
+GIF_SRCS=$(wildcard $(ASSETS_DIR)/*.gif)
+
 ifndef ZOS_PATH
     $(error "Failure: ZOS_PATH variable not found. It must point to Zeal 8-bit OS path.")
 endif
@@ -15,7 +19,7 @@ endif
 include $(ZGDK_PATH)/base_sdcc.mk
 
 all::
-	cp assets/*.zt* bin/
+	cp assets/archive/* bin/
 
 run:
 	$(ZEAL_NATIVE_BIN) -H bin -r $(ZEAL_NATIVE_ROM) #-t tf.img -e eeprom.img

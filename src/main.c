@@ -7,10 +7,10 @@
 #include <zos_video.h>
 #include <zos_keyboard.h>
 
+#include <conio.h>
 #include <zgdk/input.h>
 
 #include "main.h"
-#include "conio.h"
 #include "input.h"
 #include "chess.h"
 #include "view.h"

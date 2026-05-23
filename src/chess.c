@@ -7,13 +7,16 @@
 #include <zos_video.h>
 #include <zos_time.h>
 
+#include <conio.h>
+
 #include "chess.h"
 #include "view.h"
-#include "conio.h"
 
 /* FIXME: Why not have a 64-byte board? */
 unsigned char *board;
 unsigned char side_to_move = WHITE;
+
+int fflush_stdout(void);
 
 void board_init(unsigned char *the_board)
 {

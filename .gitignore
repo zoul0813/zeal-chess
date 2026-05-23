@@ -1,7 +1,11 @@
 bin/
+build/
+debug/
 *.zip
 release/
 tmp/
+assets/archive/
 assets/*.zt[spm]
 *.tiled-session
 zeal.ini
+/screenshot*
