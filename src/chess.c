@@ -442,6 +442,11 @@ uint16_t generate_legal_moves(uint8_t side, Move moves[], uint16_t max_moves)
                 continue;
 
             if (is_valid_move(sq, to, side)) {
+                uint8_t target = board[to];
+                if ((target & 7) == KING && (target & (WHITE | BLACK)) != side) {
+                    continue;
+                }
+
                 // Add promotion moves if pawn reaches last rank
                 if ((piece & 7) == PAWN) {
                     uint8_t rank           = to >> 4;
@@ -648,4 +653,15 @@ bool has_legal_moves(uint8_t side)
     Move moves[256];
     uint16_t count = generate_legal_moves(side, moves, 256);
     return count > 0;
+}
+
+GameStatus game_status(uint8_t side)
+{
+    bool in_check = is_in_check(side);
+
+    if (has_legal_moves(side)) {
+        return in_check ? GAME_STATUS_CHECK : GAME_STATUS_NORMAL;
+    }
+
+    return in_check ? GAME_STATUS_CHECKMATE : GAME_STATUS_STALEMATE;
 }

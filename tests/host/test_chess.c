@@ -129,6 +129,67 @@ static void test_king_cannot_move_into_check(void)
     require(!move_exists(moves, count, king_from, attacked), "king move into check is filtered from legal moves");
 }
 
+static void test_king_capture_rejected(void)
+{
+    uint8_t test_board[128];
+    Move moves[256];
+    uint8_t queen_from = INDEX(6, 4);
+    uint8_t king_to    = INDEX(7, 4);
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[queen_from]  = WHITE | QUEEN;
+    board[king_to]     = BLACK | KING;
+
+    require(is_valid_move(queen_from, king_to, WHITE), "king capture is pseudo-legal for attack detection");
+
+    uint16_t count = generate_legal_moves(WHITE, moves, 256);
+    require(!move_exists(moves, count, queen_from, king_to), "enemy king capture is filtered from legal moves");
+}
+
+static void test_game_status_checkmate(void)
+{
+    uint8_t test_board[128];
+
+    clear_board(test_board);
+    board[INDEX(0, 0)] = WHITE | KING;
+    board[INDEX(1, 1)] = BLACK | QUEEN;
+    board[INDEX(2, 2)] = BLACK | KING;
+
+    require(is_in_check(WHITE), "checkmate fixture has white in check");
+    require(!has_legal_moves(WHITE), "checkmate fixture has no legal white moves");
+    require(game_status(WHITE) == GAME_STATUS_CHECKMATE, "game_status reports checkmate");
+}
+
+static void test_game_status_stalemate(void)
+{
+    uint8_t test_board[128];
+
+    clear_board(test_board);
+    board[INDEX(0, 0)] = WHITE | KING;
+    board[INDEX(1, 2)] = BLACK | QUEEN;
+    board[INDEX(2, 2)] = BLACK | KING;
+
+    require(!is_in_check(WHITE), "stalemate fixture does not have white in check");
+    require(!has_legal_moves(WHITE), "stalemate fixture has no legal white moves");
+    require(game_status(WHITE) == GAME_STATUS_STALEMATE, "game_status reports stalemate");
+}
+
+static void test_game_status_normal_and_check(void)
+{
+    uint8_t test_board[128];
+
+    board_init(test_board);
+    require(game_status(WHITE) == GAME_STATUS_NORMAL, "initial position reports normal status");
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | ROOK;
+    board[INDEX(7, 0)] = BLACK | KING;
+
+    require(game_status(WHITE) == GAME_STATUS_CHECK, "checked side with legal moves reports check status");
+}
+
 int main(void)
 {
     test_board_init();
@@ -136,6 +197,10 @@ int main(void)
     test_material_evaluation();
     test_pinned_piece_move_filtered();
     test_king_cannot_move_into_check();
+    test_king_capture_rejected();
+    test_game_status_checkmate();
+    test_game_status_stalemate();
+    test_game_status_normal_and_check();
 
     puts("host chess tests passed");
     return 0;

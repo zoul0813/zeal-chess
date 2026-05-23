@@ -36,6 +36,13 @@ typedef struct {
     uint8_t promotion;  // 0 if no promotion, else one of your piece codes (QUEEN, ROOK, etc.)
 } Move;
 
+typedef enum {
+    GAME_STATUS_NORMAL,
+    GAME_STATUS_CHECK,
+    GAME_STATUS_CHECKMATE,
+    GAME_STATUS_STALEMATE,
+} GameStatus;
+
 
 extern uint8_t *board; // 0x88 board, 16x8
 extern uint8_t side_to_move;
@@ -69,4 +76,4 @@ void pick_best_move(uint8_t side, Move* move);
 
 bool is_in_check(uint8_t side);
 bool has_legal_moves(uint8_t side);
-
+GameStatus game_status(uint8_t side);
