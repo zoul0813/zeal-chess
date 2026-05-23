@@ -73,7 +73,7 @@ uint8_t try_make_legal_move(uint8_t from, uint8_t to, uint8_t side, Move *move);
 uint16_t generate_legal_moves_for_square(uint8_t from, uint8_t side, Move moves[], uint16_t max_moves);
 void make_move(Move *m);
 void undo_move(Move *m);
-void pick_best_move(uint8_t side, Move* move);
+uint8_t pick_best_move(uint8_t side, Move* move);
 
 
 bool is_in_check(uint8_t side);

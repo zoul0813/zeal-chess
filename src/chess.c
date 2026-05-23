@@ -269,30 +269,19 @@ uint8_t ai_move_turn(void)
     gotoxy(0, 15);
     puts("Black is thinking...");
 
-    Move ai_move;
-    pick_best_move(BLACK, &ai_move);
-
-    if (ai_move.from == 0 && ai_move.to == 0) {
-        printf("AI has no valid moves. Game over.\n");
+    GameStatus status = game_status(BLACK);
+    if (status == GAME_STATUS_CHECKMATE || status == GAME_STATUS_STALEMATE) {
+        printf("AI has no legal moves. Game over.\n");
         return 0; // stop loop
     }
 
-    uint8_t piece = board[ai_move.from];
-
-    // Make the AI move
-    board[ai_move.to]   = piece;
-    board[ai_move.from] = EMPTY;
-
-    // Pawn promotion check for AI
-    uint8_t side = piece & (WHITE | BLACK);
-    uint8_t rank = ai_move.to >> 4;
-
-    if ((piece & 7) == PAWN) {
-        if ((side == WHITE && rank == 7) || (side == BLACK && rank == 0)) {
-            board[ai_move.to] = side | QUEEN;
-            printf("AI pawn promoted to Queen!\n");
-        }
+    Move ai_move;
+    if (!pick_best_move(BLACK, &ai_move)) {
+        printf("AI has no legal moves. Game over.\n");
+        return 0; // stop loop
     }
+
+    make_move(&ai_move);
 
     printf("Black moved from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
            1 + (ai_move.to >> 4));
@@ -619,37 +608,57 @@ int16_t rank_char_to_index(char c)
     return -1;
 }
 
-Move moves[256];
-void pick_best_move(uint8_t side, Move* move)
+static Move ai_moves[256];
+static Move ai_reply_moves[256];
+uint8_t pick_best_move(uint8_t side, Move* move)
 {
-    memset(moves, 0, sizeof(moves));
     Move best_move = {0, 0, 0, 0, 0};
-    uint16_t move_count = generate_legal_moves(side, moves, 256);
+    uint8_t enemy = (side == WHITE) ? BLACK : WHITE;
+
+    memset(ai_moves, 0, sizeof(ai_moves));
+    uint16_t move_count = generate_legal_moves(side, ai_moves, 256);
 
     if (move_count == 0) {
-        // No legal moves, zero out move struct
-        move->from     = 0;
-        move->to       = 0;
-        move->piece    = 0;
-        move->captured = 0;
-        return;
+        if (move)
+            *move = best_move;
+        return 0;
     }
 
     int16_t best_score = -32767; // minimum safe value
 
     for (uint16_t i = 0; i < move_count; i++) {
-        make_move(&moves[i]);
-        int16_t score = evaluate_board(side);
-        undo_move(&moves[i]);
+        make_move(&ai_moves[i]);
+
+        uint16_t reply_count = generate_legal_moves(enemy, ai_reply_moves, 256);
+        int16_t score;
+
+        if (reply_count == 0) {
+            score = evaluate_board(side);
+        } else {
+            score = 32767;
+            for (uint16_t j = 0; j < reply_count; j++) {
+                make_move(&ai_reply_moves[j]);
+                int16_t reply_score = evaluate_board(side);
+                undo_move(&ai_reply_moves[j]);
+
+                if (reply_score < score)
+                    score = reply_score;
+            }
+        }
+
+        undo_move(&ai_moves[i]);
 
         if (score > best_score) {
             best_score = score;
-            best_move  = moves[i];
+            best_move  = ai_moves[i];
         }
     }
 
     // Copy the best move found back to the pointer provided
-    *move = best_move;
+    if (move)
+        *move = best_move;
+
+    return 1;
 }
 
 

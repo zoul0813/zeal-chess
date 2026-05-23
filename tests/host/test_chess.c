@@ -262,6 +262,55 @@ static void test_generate_legal_moves_for_square(void)
     require(count == 0, "square legal move API rejects enemy piece for side");
 }
 
+static void test_ai_returns_legal_black_move(void)
+{
+    uint8_t test_board[128];
+    Move ai_move;
+    Move legal_moves[256];
+
+    board_init(test_board);
+
+    require(pick_best_move(BLACK, &ai_move), "AI returns a move from initial position");
+
+    uint16_t count = generate_legal_moves(BLACK, legal_moves, 256);
+    require(move_exists(legal_moves, count, ai_move.from, ai_move.to), "AI move is in black legal move list");
+}
+
+static void test_ai_never_leaves_black_king_in_check(void)
+{
+    uint8_t test_board[128];
+    Move ai_move;
+
+    clear_board(test_board);
+    board[INDEX(0, 0)] = WHITE | KING;
+    board[INDEX(0, 4)] = WHITE | ROOK;
+    board[INDEX(6, 4)] = BLACK | ROOK;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(6, 0)] = WHITE | QUEEN;
+
+    require(pick_best_move(BLACK, &ai_move), "AI returns a legal move with pinned black rook");
+    require(!(ai_move.from == INDEX(6, 4) && ai_move.to == INDEX(6, 0)),
+            "AI does not choose illegal sideways pinned-rook material grab");
+
+    make_move(&ai_move);
+    require(!is_in_check(BLACK), "AI move does not leave black king in check");
+    undo_move(&ai_move);
+}
+
+static void test_ai_reports_no_move_by_status(void)
+{
+    uint8_t test_board[128];
+    Move ai_move;
+
+    clear_board(test_board);
+    board[INDEX(7, 7)] = BLACK | KING;
+    board[INDEX(6, 6)] = WHITE | QUEEN;
+    board[INDEX(5, 5)] = WHITE | KING;
+
+    require(game_status(BLACK) == GAME_STATUS_CHECKMATE, "black fixture is checkmate");
+    require(!pick_best_move(BLACK, &ai_move), "AI reports no move in checkmate");
+}
+
 int main(void)
 {
     test_board_init();
@@ -277,6 +326,9 @@ int main(void)
     test_try_make_legal_move_rejects_illegal_move();
     test_try_make_legal_move_promotes_to_queen();
     test_generate_legal_moves_for_square();
+    test_ai_returns_legal_black_move();
+    test_ai_never_leaves_black_king_in_check();
+    test_ai_reports_no_move_by_status();
 
     puts("host chess tests passed");
     return 0;
