@@ -65,6 +65,7 @@ gif2zeal(${target_name} FILES
 )
 gif2zeal(${target_name} FILES
     "assets/pieces.gif"
+    "assets/font.gif"
     BIT 4
 )
 gif2zeal(${target_name} FILES
@@ -86,6 +87,8 @@ copy_assets(${target_name}
         "build/assets/board.ztm"
         "build/assets/pieces.ztp"
         "build/assets/pieces.zts"
+        "build/assets/font.zts"
+        "build/assets/font.ztp"
         "build/assets/splash.ztp"
         "build/assets/splash.zts"
         "build/assets/splash.ztm"
