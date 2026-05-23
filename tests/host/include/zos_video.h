@@ -1,0 +1,7 @@
+#pragma once
+
+#define TEXT_COLOR_BLACK 0
+#define TEXT_COLOR_WHITE 1
+#define TEXT_COLOR_LIGHT_GRAY 2
+#define TEXT_COLOR_DARK_GRAY 3
+#define TEXT_COLOR_BROWN 4

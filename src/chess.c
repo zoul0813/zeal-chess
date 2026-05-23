@@ -272,7 +272,6 @@ int is_valid_move(unsigned char from, unsigned char to, unsigned char side)
 
 int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side)
 {
-    unsigned char piece  = board[from];
     unsigned char target = board[to];
 
     int from_rank = from >> 4;
@@ -559,7 +558,7 @@ Move moves[256];
 void pick_best_move(unsigned char side, Move* move)
 {
     memset(moves, 0, sizeof(moves));
-    Move best_move = {0, 0, 0, 0};
+    Move best_move = {0, 0, 0, 0, 0};
     int move_count = generate_legal_moves(side, moves, 256);
 
     if (move_count == 0) {
