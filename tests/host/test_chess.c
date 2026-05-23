@@ -19,6 +19,22 @@ static void require(int condition, const char *message)
     }
 }
 
+static void clear_board(unsigned char test_board[128])
+{
+    memset(test_board, 0, 128);
+    board = test_board;
+}
+
+static int move_exists(Move moves[], int count, unsigned char from, unsigned char to)
+{
+    for (int i = 0; i < count; i++) {
+        if (moves[i].from == from && moves[i].to == to)
+            return 1;
+    }
+
+    return 0;
+}
+
 static int count_side_pieces(unsigned char side)
 {
     int count = 0;
@@ -75,11 +91,51 @@ static void test_material_evaluation(void)
     require(evaluate_board(BLACK) == -QUEEN_VALUE, "black trails by queen after black queen removed");
 }
 
+static void test_pinned_piece_move_filtered(void)
+{
+    unsigned char test_board[128];
+    Move moves[256];
+    unsigned char pinned_rook = INDEX(1, 4);
+    unsigned char sideways    = INDEX(1, 5);
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[pinned_rook] = WHITE | ROOK;
+    board[INDEX(7, 4)] = BLACK | ROOK;
+    board[INDEX(7, 0)] = BLACK | KING;
+
+    require(is_valid_move(pinned_rook, sideways, WHITE), "pinned rook move is pseudo-legal");
+
+    int count = generate_legal_moves(WHITE, moves, 256);
+    require(!move_exists(moves, count, pinned_rook, sideways), "pinned rook move is filtered from legal moves");
+    require(move_exists(moves, count, pinned_rook, INDEX(2, 4)), "pinned rook can move along pin line");
+}
+
+static void test_king_cannot_move_into_check(void)
+{
+    unsigned char test_board[128];
+    Move moves[256];
+    unsigned char king_from = INDEX(0, 4);
+    unsigned char attacked  = INDEX(1, 4);
+
+    clear_board(test_board);
+    board[king_from]   = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | ROOK;
+    board[INDEX(7, 0)] = BLACK | KING;
+
+    require(is_valid_move(king_from, attacked, WHITE), "king move into attacked square is pseudo-legal");
+
+    int count = generate_legal_moves(WHITE, moves, 256);
+    require(!move_exists(moves, count, king_from, attacked), "king move into check is filtered from legal moves");
+}
+
 int main(void)
 {
     test_board_init();
     test_initial_white_moves();
     test_material_evaluation();
+    test_pinned_piece_move_filtered();
+    test_king_cannot_move_into_check();
 
     puts("host chess tests passed");
     return 0;

@@ -445,23 +445,41 @@ int generate_legal_moves(unsigned char side, Move moves[], int max_moves)
                         // Generate moves for all promotion pieces
                         unsigned char promo_pieces[] = {QUEEN, ROOK, BISHOP, KNIGHT};
                         for (int i = 0; i < 4; i++) {
+                            Move move;
+
                             if (count >= max_moves)
                                 return count;
-                            moves[count].from      = sq;
-                            moves[count].to        = to;
-                            moves[count].promotion = promo_pieces[i];
-                            count++;
+                            move.from      = sq;
+                            move.to        = to;
+                            move.piece     = piece;
+                            move.captured  = 0;
+                            move.promotion = promo_pieces[i];
+                            make_move(&move);
+                            if (!is_in_check(side)) {
+                                moves[count] = move;
+                                count++;
+                            }
+                            undo_move(&move);
                         }
                         continue;
                     }
                 }
 
+                Move move;
+
                 if (count >= max_moves)
                     return count;
-                moves[count].from      = sq;
-                moves[count].to        = to;
-                moves[count].promotion = 0;
-                count++;
+                move.from      = sq;
+                move.to        = to;
+                move.piece     = piece;
+                move.captured  = 0;
+                move.promotion = 0;
+                make_move(&move);
+                if (!is_in_check(side)) {
+                    moves[count] = move;
+                    count++;
+                }
+                undo_move(&move);
             }
         }
     }
@@ -624,14 +642,5 @@ bool has_legal_moves(unsigned char side)
 {
     Move moves[256];
     int count = generate_legal_moves(side, moves, 256);
-
-    for (int i = 0; i < count; i++) {
-        make_move(&moves[i]);
-        bool legal = !is_in_check(side);
-        undo_move(&moves[i]);
-        if (legal)
-            return true;
-    }
-
-    return false;
+    return count > 0;
 }

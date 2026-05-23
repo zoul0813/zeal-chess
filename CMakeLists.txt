@@ -54,6 +54,10 @@ zos_use(zar)
 find_package(ZAR REQUIRED)
 target_link_libraries(${target_name} PUBLIC zar)
 
+target_compile_options(${target_name} PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:--nostdlib>
+)
+
 # -------------------------------
 # Assets
 # -------------------------------
