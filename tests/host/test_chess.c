@@ -190,6 +190,78 @@ static void test_game_status_normal_and_check(void)
     require(game_status(WHITE) == GAME_STATUS_CHECK, "checked side with legal moves reports check status");
 }
 
+static void test_try_make_legal_move_allows_capture(void)
+{
+    uint8_t test_board[128];
+    Move move;
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(3, 3)] = WHITE | BISHOP;
+    board[INDEX(5, 5)] = BLACK | KNIGHT;
+
+    require(try_make_legal_move(INDEX(3, 3), INDEX(5, 5), WHITE, &move), "legal capture succeeds through move API");
+    require(move.from == INDEX(3, 3), "capture move records source");
+    require(move.to == INDEX(5, 5), "capture move records destination");
+    require(move.piece == (WHITE | BISHOP), "capture move records moving piece");
+    require(move.captured == (BLACK | KNIGHT), "capture move records captured piece");
+    require(board[INDEX(3, 3)] == EMPTY, "capture clears source square");
+    require(board[INDEX(5, 5)] == (WHITE | BISHOP), "capture places moving piece on target");
+}
+
+static void test_try_make_legal_move_rejects_illegal_move(void)
+{
+    uint8_t test_board[128];
+    Move move;
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(1, 0)] = WHITE | PAWN;
+
+    memset(&move, 0xAA, sizeof(move));
+    require(!try_make_legal_move(INDEX(1, 0), INDEX(4, 0), WHITE, &move), "illegal move is rejected through move API");
+    require(board[INDEX(1, 0)] == (WHITE | PAWN), "rejected move leaves source unchanged");
+    require(board[INDEX(4, 0)] == EMPTY, "rejected move leaves target unchanged");
+}
+
+static void test_try_make_legal_move_promotes_to_queen(void)
+{
+    uint8_t test_board[128];
+    Move move;
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[INDEX(6, 0)] = WHITE | PAWN;
+
+    require(try_make_legal_move(INDEX(6, 0), INDEX(7, 0), WHITE, &move), "promotion move succeeds through move API");
+    require(move.promotion == QUEEN, "promotion records queen");
+    require(board[INDEX(6, 0)] == EMPTY, "promotion clears source square");
+    require(board[INDEX(7, 0)] == (WHITE | QUEEN), "promotion creates white queen");
+}
+
+static void test_generate_legal_moves_for_square(void)
+{
+    uint8_t test_board[128];
+    Move moves[16];
+    uint8_t bishop = INDEX(3, 3);
+
+    clear_board(test_board);
+    board[INDEX(0, 4)] = WHITE | KING;
+    board[INDEX(7, 4)] = BLACK | KING;
+    board[bishop]      = WHITE | BISHOP;
+    board[INDEX(5, 5)] = BLACK | KNIGHT;
+
+    uint16_t count = generate_legal_moves_for_square(bishop, WHITE, moves, 16);
+    require(count > 0, "square legal move API returns moves for selected piece");
+    require(move_exists(moves, count, bishop, INDEX(5, 5)), "square legal move API includes legal capture");
+
+    count = generate_legal_moves_for_square(INDEX(5, 5), WHITE, moves, 16);
+    require(count == 0, "square legal move API rejects enemy piece for side");
+}
+
 int main(void)
 {
     test_board_init();
@@ -201,6 +273,10 @@ int main(void)
     test_game_status_checkmate();
     test_game_status_stalemate();
     test_game_status_normal_and_check();
+    test_try_make_legal_move_allows_capture();
+    test_try_make_legal_move_rejects_illegal_move();
+    test_try_make_legal_move_promotes_to_queen();
+    test_generate_legal_moves_for_square();
 
     puts("host chess tests passed");
     return 0;

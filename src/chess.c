@@ -23,6 +23,52 @@ static uint16_t u16_abs(int16_t value)
     return value < 0 ? (uint16_t)-value : (uint16_t)value;
 }
 
+static uint8_t is_promotion_square(uint8_t piece, uint8_t to, uint8_t side)
+{
+    if ((piece & 7) != PAWN)
+        return 0;
+
+    uint8_t rank = to >> 4;
+    uint8_t promotion_rank = (side == WHITE) ? 7 : 0;
+    return rank == promotion_rank;
+}
+
+static uint8_t build_legal_move(uint8_t from, uint8_t to, uint8_t side, Move *move)
+{
+    if (!IS_ON_BOARD(from) || !IS_ON_BOARD(to))
+        return 0;
+
+    uint8_t piece = board[from];
+    if (piece == EMPTY || !is_friendly(piece, side))
+        return 0;
+
+    if (!is_valid_move(from, to, side))
+        return 0;
+
+    uint8_t target = board[to];
+    if ((target & 7) == KING && !is_friendly(target, side))
+        return 0;
+
+    Move candidate;
+    candidate.from      = from;
+    candidate.to        = to;
+    candidate.piece     = piece;
+    candidate.captured  = 0;
+    candidate.promotion = is_promotion_square(piece, to, side) ? QUEEN : 0;
+
+    make_move(&candidate);
+    uint8_t legal = !is_in_check(side);
+    undo_move(&candidate);
+
+    if (!legal)
+        return 0;
+
+    if (move)
+        *move = candidate;
+
+    return 1;
+}
+
 void board_init(uint8_t *the_board)
 {
     board = the_board;
@@ -441,58 +487,49 @@ uint16_t generate_legal_moves(uint8_t side, Move moves[], uint16_t max_moves)
             if ((to & 0x88) != 0)
                 continue;
 
-            if (is_valid_move(sq, to, side)) {
-                uint8_t target = board[to];
-                if ((target & 7) == KING && (target & (WHITE | BLACK)) != side) {
-                    continue;
-                }
-
-                // Add promotion moves if pawn reaches last rank
-                if ((piece & 7) == PAWN) {
-                    uint8_t rank           = to >> 4;
-                    uint8_t promotion_rank = (side == WHITE) ? 7 : 0;
-                    if (rank == promotion_rank) {
-                        // Generate moves for all promotion pieces
-                        uint8_t promo_pieces[] = {QUEEN, ROOK, BISHOP, KNIGHT};
-                        for (uint8_t i = 0; i < 4; i++) {
-                            Move move;
-
-                            if (count >= max_moves)
-                                return count;
-                            move.from      = sq;
-                            move.to        = to;
-                            move.piece     = piece;
-                            move.captured  = 0;
-                            move.promotion = promo_pieces[i];
-                            make_move(&move);
-                            if (!is_in_check(side)) {
-                                moves[count] = move;
-                                count++;
-                            }
-                            undo_move(&move);
-                        }
-                        continue;
-                    }
-                }
-
-                Move move;
-
+            Move move;
+            if (build_legal_move(sq, to, side, &move)) {
                 if (count >= max_moves)
                     return count;
-                move.from      = sq;
-                move.to        = to;
-                move.piece     = piece;
-                move.captured  = 0;
-                move.promotion = 0;
-                make_move(&move);
-                if (!is_in_check(side)) {
-                    moves[count] = move;
-                    count++;
-                }
-                undo_move(&move);
+                moves[count] = move;
+                count++;
             }
         }
     }
+    return count;
+}
+
+uint8_t try_make_legal_move(uint8_t from, uint8_t to, uint8_t side, Move *move)
+{
+    Move legal_move;
+
+    if (!build_legal_move(from, to, side, &legal_move))
+        return 0;
+
+    make_move(&legal_move);
+    if (move)
+        *move = legal_move;
+
+    return 1;
+}
+
+uint16_t generate_legal_moves_for_square(uint8_t from, uint8_t side, Move moves[], uint16_t max_moves)
+{
+    uint16_t count = 0;
+
+    for (uint8_t to = 0; to < 128; to++) {
+        if (!IS_ON_BOARD(to))
+            continue;
+
+        Move move;
+        if (build_legal_move(from, to, side, &move)) {
+            if (count >= max_moves)
+                return count;
+            moves[count] = move;
+            count++;
+        }
+    }
+
     return count;
 }
 
