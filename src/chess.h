@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <zos_video.h>
 
 #define COLOR_LIGHT TEXT_COLOR_DARK_GRAY
@@ -28,45 +29,44 @@
 #define IS_ON_BOARD(sq) (((sq) & 0x88) == 0)
 
 typedef struct {
-    unsigned char from;      // Source square (0-127 if using 0x88 board)
-    unsigned char to;        // Destination square
-    unsigned char piece;     // Piece being moved (optional but useful)
-    unsigned char captured;  // Piece captured, if any (0 if none)
-    unsigned char promotion;  // 0 if no promotion, else one of your piece codes (QUEEN, ROOK, etc.)
+    uint8_t from;      // Source square (0-127 if using 0x88 board)
+    uint8_t to;        // Destination square
+    uint8_t piece;     // Piece being moved (optional but useful)
+    uint8_t captured;  // Piece captured, if any (0 if none)
+    uint8_t promotion;  // 0 if no promotion, else one of your piece codes (QUEEN, ROOK, etc.)
 } Move;
 
 
-extern unsigned char *board; // 0x88 board, 16x8
-extern unsigned char side_to_move;
+extern uint8_t *board; // 0x88 board, 16x8
+extern uint8_t side_to_move;
 
-void board_init(unsigned char *the_board);
-char piece_char(unsigned char piece);
+void board_init(uint8_t *the_board);
+char piece_char(uint8_t piece);
 void print_board(void);
 
-int human_move_turn(char* input);
-int ai_move_turn(void);
+uint8_t human_move_turn(char* input);
+uint8_t ai_move_turn(void);
 
-unsigned char parse_file(char c);
-unsigned char parse_rank(char c);
-unsigned char parse_square(const char *s);
+uint8_t parse_file(char c);
+uint8_t parse_rank(char c);
+uint8_t parse_square(const char *s);
 
-int is_friendly(unsigned char piece, unsigned char side);
+uint8_t is_friendly(uint8_t piece, uint8_t side);
 
-int is_valid_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_knight_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_bishop_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_rook_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_queen_move(unsigned char from, unsigned char to, unsigned char side);
-int is_valid_king_move(unsigned char from, unsigned char to, unsigned char side);
+uint8_t is_valid_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_pawn_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_knight_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_bishop_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_rook_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_queen_move(uint8_t from, uint8_t to, uint8_t side);
+uint8_t is_valid_king_move(uint8_t from, uint8_t to, uint8_t side);
 
-int generate_legal_moves(unsigned char side, Move moves[], int max_moves);
+uint16_t generate_legal_moves(uint8_t side, Move moves[], uint16_t max_moves);
 void make_move(Move *m);
 void undo_move(Move *m);
-void pick_best_move(unsigned char side, Move* move);
+void pick_best_move(uint8_t side, Move* move);
 
 
-bool is_in_check(unsigned char side);
-bool has_legal_moves(unsigned char side);
-
+bool is_in_check(uint8_t side);
+bool has_legal_moves(uint8_t side);
 

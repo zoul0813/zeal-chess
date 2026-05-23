@@ -23,7 +23,7 @@
 #define FSM_SELECTING   0
 #define FSM_MOVING      1
 
-static int continue_loop = 0;
+static uint8_t continue_loop = 0;
 static char input[16];
 static uint8_t the_board[128];
 static uint8_t s_cpy_board[128];

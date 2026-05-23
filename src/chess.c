@@ -13,12 +13,17 @@
 #include "view.h"
 
 /* FIXME: Why not have a 64-byte board? */
-unsigned char *board;
-unsigned char side_to_move = WHITE;
+uint8_t *board;
+uint8_t side_to_move = WHITE;
 
 int fflush_stdout(void);
 
-void board_init(unsigned char *the_board)
+static uint16_t u16_abs(int16_t value)
+{
+    return value < 0 ? (uint16_t)-value : (uint16_t)value;
+}
+
+void board_init(uint8_t *the_board)
 {
     board = the_board;
 
@@ -34,7 +39,7 @@ void board_init(unsigned char *the_board)
     board[INDEX(0, 5)] = WHITE | BISHOP;
     board[INDEX(0, 6)] = WHITE | KNIGHT;
     board[INDEX(0, 7)] = WHITE | ROOK;
-    for (int i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         board[INDEX(1, i)] = WHITE | PAWN;
     }
 
@@ -47,12 +52,12 @@ void board_init(unsigned char *the_board)
     board[INDEX(7, 5)] = BLACK | BISHOP;
     board[INDEX(7, 6)] = BLACK | KNIGHT;
     board[INDEX(7, 7)] = BLACK | ROOK;
-    for (int i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++) {
         board[INDEX(6, i)] = BLACK | PAWN;
     }
 }
 
-char piece_char(unsigned char piece)
+char piece_char(uint8_t piece)
 {
     switch (piece & 7) {
         case PAWN: return 'P';
@@ -75,7 +80,7 @@ void print_board(void)
     textcolor(TEXT_COLOR_LIGHT_GRAY);
     puts("\n    abcdefgh");
 
-    for (int rank = 7; rank >= 0; rank--) {
+    for (int16_t rank = 7; rank >= 0; rank--) {
 
         // print the vertical grid label
         bgcolor(TEXT_COLOR_BLACK);
@@ -84,8 +89,8 @@ void print_board(void)
         putchar(rank + 1 + 48);
         fflush_stdout();
 
-        for (int file = 0; file < 8; file++) {
-            unsigned char p = board[INDEX(rank, file)];
+        for (uint8_t file = 0; file < 8; file++) {
+            uint8_t p = board[INDEX(rank, file)];
             char c          = piece_char(p);
             if (p & BLACK) {
                 c += 32; // lowercase for black
@@ -126,34 +131,34 @@ void print_board(void)
 }
 
 
-unsigned char parse_file(char c)
+uint8_t parse_file(char c)
 {
     if (c >= 'a' && c <= 'h')
         return c - 'a';
     return 0xFF;
 }
 
-unsigned char parse_rank(char c)
+uint8_t parse_rank(char c)
 {
     if (c >= '1' && c <= '8')
         return c - '1';
     return 0xFF;
 }
 
-unsigned char parse_square(const char* s)
+uint8_t parse_square(const char* s)
 {
-    unsigned char file = parse_file(s[0]);
-    unsigned char rank = parse_rank(s[1]);
+    uint8_t file = parse_file(s[0]);
+    uint8_t rank = parse_rank(s[1]);
     if (file > 7 || rank > 7)
         return 0xFF;
     return INDEX(rank, file);
 }
 
 // Handles human (White) move input and execution
-int human_move_turn(char* input)
+uint8_t human_move_turn(char* input)
 {
     // Remove trailing newline if present
-    int len = strlen(input);
+    uint16_t len = strlen(input);
     if (len > 0 && input[len - 1] == '\n') {
         input[len - 1] = '\0';
         len--;
@@ -169,15 +174,15 @@ int human_move_turn(char* input)
         return 1; // continue loop
     }
 
-    unsigned char from = parse_square(&input[0]);
-    unsigned char to   = parse_square(&input[2]);
+    uint8_t from = parse_square(&input[0]);
+    uint8_t to   = parse_square(&input[2]);
 
     if (!IS_ON_BOARD(from) || !IS_ON_BOARD(to)) {
         printf("Invalid square.\n");
         return 1;
     }
 
-    unsigned char piece = board[from];
+    uint8_t piece = board[from];
 
     if (piece == EMPTY) {
         printf("No piece at source square.\n");
@@ -199,8 +204,8 @@ int human_move_turn(char* input)
     board[from] = EMPTY;
 
     // Pawn promotion check
-    unsigned char side = piece & (WHITE | BLACK);
-    int rank           = to >> 4;
+    uint8_t side = piece & (WHITE | BLACK);
+    uint8_t rank = to >> 4;
 
     if ((piece & 7) == PAWN) {
         if ((side == WHITE && rank == 7) || (side == BLACK && rank == 0)) {
@@ -213,7 +218,7 @@ int human_move_turn(char* input)
 }
 
 // Handles AI (Black) move generation and execution
-int ai_move_turn(void)
+uint8_t ai_move_turn(void)
 {
     gotoxy(0, 15);
     puts("Black is thinking...");
@@ -226,15 +231,15 @@ int ai_move_turn(void)
         return 0; // stop loop
     }
 
-    unsigned char piece = board[ai_move.from];
+    uint8_t piece = board[ai_move.from];
 
     // Make the AI move
     board[ai_move.to]   = piece;
     board[ai_move.from] = EMPTY;
 
     // Pawn promotion check for AI
-    unsigned char side = piece & (WHITE | BLACK);
-    int rank           = ai_move.to >> 4;
+    uint8_t side = piece & (WHITE | BLACK);
+    uint8_t rank = ai_move.to >> 4;
 
     if ((piece & 7) == PAWN) {
         if ((side == WHITE && rank == 7) || (side == BLACK && rank == 0)) {
@@ -249,14 +254,14 @@ int ai_move_turn(void)
     return 1;
 }
 
-int is_friendly(unsigned char piece, unsigned char side)
+uint8_t is_friendly(uint8_t piece, uint8_t side)
 {
     return (piece & (WHITE | BLACK)) == side;
 }
 
-int is_valid_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char piece = board[from] & 7;
+    uint8_t piece = board[from] & 7;
 
     switch (piece) {
         case PAWN: return is_valid_pawn_move(from, to, side);
@@ -270,17 +275,17 @@ int is_valid_move(unsigned char from, unsigned char to, unsigned char side)
 }
 
 
-int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_pawn_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char target = board[to];
+    uint8_t target = board[to];
 
-    int from_rank = from >> 4;
-    int from_file = from & 0xF;
-    int to_rank   = to >> 4;
-    int to_file   = to & 0xF;
+    int16_t from_rank = from >> 4;
+    int16_t from_file = from & 0xF;
+    int16_t to_rank   = to >> 4;
+    int16_t to_file   = to & 0xF;
 
-    int dir        = (side == WHITE) ? 1 : -1;
-    int start_rank = (side == WHITE) ? 1 : 6;
+    int16_t dir        = (side == WHITE) ? 1 : -1;
+    int16_t start_rank = (side == WHITE) ? 1 : 6;
 
     // Normal forward move
     if (to_file == from_file && target == EMPTY) {
@@ -290,7 +295,7 @@ int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side)
         // double step from starting position
         if (from_rank == start_rank && to_rank == from_rank + 2 * dir) {
             // check if square in front is empty
-            unsigned char between = INDEX(from_rank + dir, from_file);
+            uint8_t between = INDEX(from_rank + dir, from_file);
             if (board[between] == EMPTY)
                 return 1;
         }
@@ -308,48 +313,48 @@ int is_valid_pawn_move(unsigned char from, unsigned char to, unsigned char side)
     return 0;
 }
 
-int is_valid_knight_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_knight_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char target = board[to];
-    int from_rank        = from >> 4;
-    int from_file        = from & 0xF;
-    int to_rank          = to >> 4;
-    int to_file          = to & 0xF;
+    uint8_t target    = board[to];
+    int16_t from_rank = from >> 4;
+    int16_t from_file = from & 0xF;
+    int16_t to_rank   = to >> 4;
+    int16_t to_file   = to & 0xF;
 
-    int dr = to_rank - from_rank;
-    int df = to_file - from_file;
+    int16_t dr = to_rank - from_rank;
+    int16_t df = to_file - from_file;
 
     // Can't capture own piece
     if (target != EMPTY && (target & (WHITE | BLACK)) == side)
         return 0;
 
     // Knight moves in L-shape
-    if ((abs(dr) == 2 && abs(df) == 1) || (abs(dr) == 1 && abs(df) == 2)) {
+    if ((u16_abs(dr) == 2 && u16_abs(df) == 1) || (u16_abs(dr) == 1 && u16_abs(df) == 2)) {
         return 1;
     }
 
     return 0;
 }
 
-int is_valid_bishop_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_bishop_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char target = board[to];
-    int from_rank        = from >> 4;
-    int from_file        = from & 0xF;
-    int to_rank          = to >> 4;
-    int to_file          = to & 0xF;
+    uint8_t target    = board[to];
+    int16_t from_rank = from >> 4;
+    int16_t from_file = from & 0xF;
+    int16_t to_rank   = to >> 4;
+    int16_t to_file   = to & 0xF;
 
-    int dr = to_rank - from_rank;
-    int df = to_file - from_file;
+    int16_t dr = to_rank - from_rank;
+    int16_t df = to_file - from_file;
 
     if (target != EMPTY && (target & (WHITE | BLACK)) == side)
         return 0;
 
-    if (abs(dr) == abs(df) && dr != 0) {
-        int step_r = (dr > 0) ? 1 : -1;
-        int step_f = (df > 0) ? 1 : -1;
-        int r      = from_rank + step_r;
-        int f      = from_file + step_f;
+    if (u16_abs(dr) == u16_abs(df) && dr != 0) {
+        int16_t step_r = (dr > 0) ? 1 : -1;
+        int16_t step_f = (df > 0) ? 1 : -1;
+        int16_t r      = from_rank + step_r;
+        int16_t f      = from_file + step_f;
         while (r != to_rank && f != to_file) {
             if (board[INDEX(r, f)] != EMPTY)
                 return 0;
@@ -361,25 +366,25 @@ int is_valid_bishop_move(unsigned char from, unsigned char to, unsigned char sid
     return 0;
 }
 
-int is_valid_rook_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_rook_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char target = board[to];
-    int from_rank        = from >> 4;
-    int from_file        = from & 0xF;
-    int to_rank          = to >> 4;
-    int to_file          = to & 0xF;
+    uint8_t target    = board[to];
+    int16_t from_rank = from >> 4;
+    int16_t from_file = from & 0xF;
+    int16_t to_rank   = to >> 4;
+    int16_t to_file   = to & 0xF;
 
-    int dr = to_rank - from_rank;
-    int df = to_file - from_file;
+    int16_t dr = to_rank - from_rank;
+    int16_t df = to_file - from_file;
 
     if (target != EMPTY && (target & (WHITE | BLACK)) == side)
         return 0;
 
     if ((dr == 0 && df != 0) || (dr != 0 && df == 0)) {
-        int step_r = (dr == 0) ? 0 : (dr > 0 ? 1 : -1);
-        int step_f = (df == 0) ? 0 : (df > 0 ? 1 : -1);
-        int r      = from_rank + step_r;
-        int f      = from_file + step_f;
+        int16_t step_r = (dr == 0) ? 0 : (dr > 0 ? 1 : -1);
+        int16_t step_f = (df == 0) ? 0 : (df > 0 ? 1 : -1);
+        int16_t r      = from_rank + step_r;
+        int16_t f      = from_file + step_f;
         while (r != to_rank || f != to_file) {
             if (board[INDEX(r, f)] != EMPTY)
                 return 0;
@@ -391,27 +396,27 @@ int is_valid_rook_move(unsigned char from, unsigned char to, unsigned char side)
     return 0;
 }
 
-int is_valid_queen_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_queen_move(uint8_t from, uint8_t to, uint8_t side)
 {
     // Queen combines rook and bishop moves
     return is_valid_rook_move(from, to, side) || is_valid_bishop_move(from, to, side);
 }
 
-int is_valid_king_move(unsigned char from, unsigned char to, unsigned char side)
+uint8_t is_valid_king_move(uint8_t from, uint8_t to, uint8_t side)
 {
-    unsigned char target = board[to];
-    int from_rank        = from >> 4;
-    int from_file        = from & 0xF;
-    int to_rank          = to >> 4;
-    int to_file          = to & 0xF;
+    uint8_t target    = board[to];
+    int16_t from_rank = from >> 4;
+    int16_t from_file = from & 0xF;
+    int16_t to_rank   = to >> 4;
+    int16_t to_file   = to & 0xF;
 
-    int dr = to_rank - from_rank;
-    int df = to_file - from_file;
+    int16_t dr = to_rank - from_rank;
+    int16_t df = to_file - from_file;
 
     if (target != EMPTY && (target & (WHITE | BLACK)) == side)
         return 0;
 
-    if (abs(dr) <= 1 && abs(df) <= 1) {
+    if (u16_abs(dr) <= 1 && u16_abs(df) <= 1) {
         return 1;
     }
 
@@ -420,31 +425,31 @@ int is_valid_king_move(unsigned char from, unsigned char to, unsigned char side)
     return 0;
 }
 
-int generate_legal_moves(unsigned char side, Move moves[], int max_moves)
+uint16_t generate_legal_moves(uint8_t side, Move moves[], uint16_t max_moves)
 {
-    int count = 0;
-    for (unsigned char sq = 0; sq < 128; sq++) {
+    uint16_t count = 0;
+    for (uint8_t sq = 0; sq < 128; sq++) {
         if ((sq & 0x88) != 0)
             continue; // skip invalid squares
-        unsigned char piece = board[sq];
+        uint8_t piece = board[sq];
         if (piece == EMPTY)
             continue;
         if ((piece & (WHITE | BLACK)) != side)
             continue;
 
-        for (unsigned char to = 0; to < 128; to++) {
+        for (uint8_t to = 0; to < 128; to++) {
             if ((to & 0x88) != 0)
                 continue;
 
             if (is_valid_move(sq, to, side)) {
                 // Add promotion moves if pawn reaches last rank
                 if ((piece & 7) == PAWN) {
-                    int rank           = to >> 4;
-                    int promotion_rank = (side == WHITE) ? 7 : 0;
+                    uint8_t rank           = to >> 4;
+                    uint8_t promotion_rank = (side == WHITE) ? 7 : 0;
                     if (rank == promotion_rank) {
                         // Generate moves for all promotion pieces
-                        unsigned char promo_pieces[] = {QUEEN, ROOK, BISHOP, KNIGHT};
-                        for (int i = 0; i < 4; i++) {
+                        uint8_t promo_pieces[] = {QUEEN, ROOK, BISHOP, KNIGHT};
+                        for (uint8_t i = 0; i < 4; i++) {
                             Move move;
 
                             if (count >= max_moves)
@@ -488,13 +493,13 @@ int generate_legal_moves(unsigned char side, Move moves[], int max_moves)
 
 void make_move(Move* m)
 {
-    unsigned char piece = board[m->from];
+    uint8_t piece = board[m->from];
     m->captured         = board[m->to]; // save captured piece for undo
 
     // Move piece to destination
     if (m->promotion) {
         // Replace pawn with promoted piece (keep side bits)
-        unsigned char side = piece & (WHITE | BLACK);
+        uint8_t side = piece & (WHITE | BLACK);
         board[m->to]       = m->promotion | side;
     } else {
         board[m->to] = piece;
@@ -508,8 +513,8 @@ void make_move(Move* m)
 
 void undo_move(Move* m)
 {
-    unsigned char piece = board[m->to];
-    unsigned char side  = piece & (WHITE | BLACK);
+    uint8_t piece = board[m->to];
+    uint8_t side  = piece & (WHITE | BLACK);
 
     // Restore original piece at source (pawn if promoted)
     if (m->promotion) {
@@ -523,7 +528,7 @@ void undo_move(Move* m)
     board[m->to] = m->captured;
 }
 
-int piece_value(unsigned char piece)
+uint16_t piece_value(uint8_t piece)
 {
     switch (piece & 7) {
         case PAWN: return PAWN_VALUE;
@@ -536,18 +541,18 @@ int piece_value(unsigned char piece)
     }
 }
 
-int evaluate_board(unsigned char side)
+int16_t evaluate_board(uint8_t side)
 {
-    int score = 0;
+    int16_t score = 0;
 
-    for (unsigned char sq = 0; sq < 128; sq++) {
+    for (uint8_t sq = 0; sq < 128; sq++) {
         if (sq & 0x88)
             continue;
-        unsigned char piece = board[sq];
+        uint8_t piece = board[sq];
         if (piece == EMPTY)
             continue;
 
-        int value = piece_value(piece);
+        uint16_t value = piece_value(piece);
         if ((piece & (WHITE | BLACK)) == side)
             score += value;
         else
@@ -556,7 +561,7 @@ int evaluate_board(unsigned char side)
     return score;
 }
 
-int file_char_to_index(char c)
+int16_t file_char_to_index(char c)
 {
     if (c >= 'a' && c <= 'h')
         return c - 'a';
@@ -565,7 +570,7 @@ int file_char_to_index(char c)
     return -1;
 }
 
-int rank_char_to_index(char c)
+int16_t rank_char_to_index(char c)
 {
     if (c >= '1' && c <= '8')
         return c - '1';
@@ -573,11 +578,11 @@ int rank_char_to_index(char c)
 }
 
 Move moves[256];
-void pick_best_move(unsigned char side, Move* move)
+void pick_best_move(uint8_t side, Move* move)
 {
     memset(moves, 0, sizeof(moves));
     Move best_move = {0, 0, 0, 0, 0};
-    int move_count = generate_legal_moves(side, moves, 256);
+    uint16_t move_count = generate_legal_moves(side, moves, 256);
 
     if (move_count == 0) {
         // No legal moves, zero out move struct
@@ -588,11 +593,11 @@ void pick_best_move(unsigned char side, Move* move)
         return;
     }
 
-    int best_score = -32767; // minimum safe value
+    int16_t best_score = -32767; // minimum safe value
 
-    for (int i = 0; i < move_count; i++) {
+    for (uint16_t i = 0; i < move_count; i++) {
         make_move(&moves[i]);
-        int score = evaluate_board(side);
+        int16_t score = evaluate_board(side);
         undo_move(&moves[i]);
 
         if (score > best_score) {
@@ -606,13 +611,13 @@ void pick_best_move(unsigned char side, Move* move)
 }
 
 
-bool is_in_check(unsigned char side)
+bool is_in_check(uint8_t side)
 {
-    unsigned char enemy       = (side == WHITE) ? BLACK : WHITE;
-    unsigned char king_square = 0xFF;
+    uint8_t enemy       = (side == WHITE) ? BLACK : WHITE;
+    uint8_t king_square = 0xFF;
 
     // Find the king's square
-    for (int i = 0; i < 128; i++) {
+    for (uint8_t i = 0; i < 128; i++) {
         if (!IS_ON_BOARD(i))
             continue;
         if ((board[i] & 7) == KING && is_friendly(board[i], side)) {
@@ -625,7 +630,7 @@ bool is_in_check(unsigned char side)
         return true; // king not found — assume check
 
     // See if any enemy piece can move to the king
-    for (int i = 0; i < 128; i++) {
+    for (uint8_t i = 0; i < 128; i++) {
         if (!IS_ON_BOARD(i))
             continue;
         if (board[i] != EMPTY && is_friendly(board[i], enemy)) {
@@ -638,9 +643,9 @@ bool is_in_check(unsigned char side)
     return false;
 }
 
-bool has_legal_moves(unsigned char side)
+bool has_legal_moves(uint8_t side)
 {
     Move moves[256];
-    int count = generate_legal_moves(side, moves, 256);
+    uint16_t count = generate_legal_moves(side, moves, 256);
     return count > 0;
 }

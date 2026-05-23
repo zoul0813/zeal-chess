@@ -4,14 +4,14 @@
 
 #include "chess.h"
 
-int evaluate_board(unsigned char side);
+int16_t evaluate_board(uint8_t side);
 
 int fflush_stdout(void)
 {
     return fflush(stdout);
 }
 
-static void require(int condition, const char *message)
+static void require(uint8_t condition, const char *message)
 {
     if (!condition) {
         fprintf(stderr, "FAIL: %s\n", message);
@@ -19,15 +19,15 @@ static void require(int condition, const char *message)
     }
 }
 
-static void clear_board(unsigned char test_board[128])
+static void clear_board(uint8_t test_board[128])
 {
     memset(test_board, 0, 128);
     board = test_board;
 }
 
-static int move_exists(Move moves[], int count, unsigned char from, unsigned char to)
+static uint8_t move_exists(Move moves[], uint16_t count, uint8_t from, uint8_t to)
 {
-    for (int i = 0; i < count; i++) {
+    for (uint16_t i = 0; i < count; i++) {
         if (moves[i].from == from && moves[i].to == to)
             return 1;
     }
@@ -35,11 +35,11 @@ static int move_exists(Move moves[], int count, unsigned char from, unsigned cha
     return 0;
 }
 
-static int count_side_pieces(unsigned char side)
+static uint16_t count_side_pieces(uint8_t side)
 {
-    int count = 0;
+    uint16_t count = 0;
 
-    for (unsigned char sq = 0; sq < 128; sq++) {
+    for (uint8_t sq = 0; sq < 128; sq++) {
         if (!IS_ON_BOARD(sq))
             continue;
         if (board[sq] != EMPTY && is_friendly(board[sq], side))
@@ -51,7 +51,7 @@ static int count_side_pieces(unsigned char side)
 
 static void test_board_init(void)
 {
-    unsigned char test_board[128];
+    uint8_t test_board[128];
 
     memset(test_board, 0xAA, sizeof(test_board));
     board_init(test_board);
@@ -67,18 +67,18 @@ static void test_board_init(void)
 
 static void test_initial_white_moves(void)
 {
-    unsigned char test_board[128];
+    uint8_t test_board[128];
     Move moves[256];
 
     board_init(test_board);
 
-    int count = generate_legal_moves(WHITE, moves, 256);
+    uint16_t count = generate_legal_moves(WHITE, moves, 256);
     require(count > 0, "initial white legal move count is positive");
 }
 
 static void test_material_evaluation(void)
 {
-    unsigned char test_board[128];
+    uint8_t test_board[128];
 
     board_init(test_board);
 
@@ -93,10 +93,10 @@ static void test_material_evaluation(void)
 
 static void test_pinned_piece_move_filtered(void)
 {
-    unsigned char test_board[128];
+    uint8_t test_board[128];
     Move moves[256];
-    unsigned char pinned_rook = INDEX(1, 4);
-    unsigned char sideways    = INDEX(1, 5);
+    uint8_t pinned_rook = INDEX(1, 4);
+    uint8_t sideways    = INDEX(1, 5);
 
     clear_board(test_board);
     board[INDEX(0, 4)] = WHITE | KING;
@@ -106,17 +106,17 @@ static void test_pinned_piece_move_filtered(void)
 
     require(is_valid_move(pinned_rook, sideways, WHITE), "pinned rook move is pseudo-legal");
 
-    int count = generate_legal_moves(WHITE, moves, 256);
+    uint16_t count = generate_legal_moves(WHITE, moves, 256);
     require(!move_exists(moves, count, pinned_rook, sideways), "pinned rook move is filtered from legal moves");
     require(move_exists(moves, count, pinned_rook, INDEX(2, 4)), "pinned rook can move along pin line");
 }
 
 static void test_king_cannot_move_into_check(void)
 {
-    unsigned char test_board[128];
+    uint8_t test_board[128];
     Move moves[256];
-    unsigned char king_from = INDEX(0, 4);
-    unsigned char attacked  = INDEX(1, 4);
+    uint8_t king_from = INDEX(0, 4);
+    uint8_t attacked  = INDEX(1, 4);
 
     clear_board(test_board);
     board[king_from]   = WHITE | KING;
@@ -125,7 +125,7 @@ static void test_king_cannot_move_into_check(void)
 
     require(is_valid_move(king_from, attacked, WHITE), "king move into attacked square is pseudo-legal");
 
-    int count = generate_legal_moves(WHITE, moves, 256);
+    uint16_t count = generate_legal_moves(WHITE, moves, 256);
     require(!move_exists(moves, count, king_from, attacked), "king move into check is filtered from legal moves");
 }
 
