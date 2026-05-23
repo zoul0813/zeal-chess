@@ -11,7 +11,6 @@
 #include <zgdk/input.h>
 
 #include "main.h"
-#include "input.h"
 #include "chess.h"
 #include "view.h"
 #include "splash.h"

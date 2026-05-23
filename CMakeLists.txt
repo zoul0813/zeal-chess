@@ -30,7 +30,6 @@ project(${target_name} C ASM)
 add_executable(${target_name}
     src/main.c
     src/chess.c
-    src/input.c
     src/view.c
     src/splash.c
     src/assets.c
