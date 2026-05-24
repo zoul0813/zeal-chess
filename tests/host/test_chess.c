@@ -311,6 +311,44 @@ static void test_ai_reports_no_move_by_status(void)
     require(!pick_best_move(BLACK, &ai_move), "AI reports no move in checkmate");
 }
 
+static void test_black_ai_reply_applies_after_white_commit(void)
+{
+    uint8_t test_board[128];
+    Move white_move;
+    Move black_move;
+    Move legal_moves[256];
+
+    board_init(test_board);
+
+    require(try_make_legal_move(INDEX(1, 4), INDEX(3, 4), WHITE, &white_move),
+            "white opening move commits before black reply");
+
+    uint16_t count = generate_legal_moves(BLACK, legal_moves, 256);
+    require(make_black_ai_reply(&black_move), "black AI reply runs after white commit");
+    require(move_exists(legal_moves, count, black_move.from, black_move.to),
+            "black reply was legal at reply time");
+    require(board[black_move.from] == EMPTY, "black reply clears source square");
+    require(is_friendly(board[black_move.to], BLACK), "black reply places black piece on target");
+}
+
+static void test_black_ai_reply_stops_on_terminal_status(void)
+{
+    uint8_t test_board[128];
+    uint8_t before[128];
+    Move black_move;
+
+    clear_board(test_board);
+    board[INDEX(7, 7)] = BLACK | KING;
+    board[INDEX(6, 6)] = WHITE | QUEEN;
+    board[INDEX(5, 5)] = WHITE | KING;
+
+    memcpy(before, board, sizeof(before));
+
+    require(game_status(BLACK) == GAME_STATUS_CHECKMATE, "black terminal status detected before reply");
+    require(!make_black_ai_reply(&black_move), "black AI reply does not run in checkmate");
+    require(memcmp(before, board, sizeof(before)) == 0, "terminal black reply leaves board unchanged");
+}
+
 static void test_selection_finds_only_pieces_with_legal_moves(void)
 {
     uint8_t test_board[128];
@@ -402,6 +440,8 @@ int main(void)
     test_ai_returns_legal_black_move();
     test_ai_never_leaves_black_king_in_check();
     test_ai_reports_no_move_by_status();
+    test_black_ai_reply_applies_after_white_commit();
+    test_black_ai_reply_stops_on_terminal_status();
     test_selection_finds_only_pieces_with_legal_moves();
     test_selection_reports_no_selectable_piece();
     test_selected_piece_targets_are_legal_only();

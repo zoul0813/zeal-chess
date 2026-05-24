@@ -267,24 +267,35 @@ uint8_t human_move_turn(char* input)
 uint8_t ai_move_turn(void)
 {
     gotoxy(0, 15);
-    puts("Black is thinking...");
+    puts("Black thinking");
 
+    Move ai_move;
+    if (!make_black_ai_reply(&ai_move)) {
+        printf("AI has no legal moves. Game over.\n");
+        return 0; // stop loop
+    }
+
+    printf("Black moved from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
+           1 + (ai_move.to >> 4));
+
+    return 1;
+}
+
+uint8_t make_black_ai_reply(Move *move)
+{
     GameStatus status = game_status(BLACK);
     if (status == GAME_STATUS_CHECKMATE || status == GAME_STATUS_STALEMATE) {
-        printf("AI has no legal moves. Game over.\n");
         return 0; // stop loop
     }
 
     Move ai_move;
     if (!pick_best_move(BLACK, &ai_move)) {
-        printf("AI has no legal moves. Game over.\n");
         return 0; // stop loop
     }
 
     make_move(&ai_move);
-
-    printf("Black moved from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
-           1 + (ai_move.to >> 4));
+    if (move)
+        *move = ai_move;
 
     return 1;
 }

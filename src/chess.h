@@ -58,6 +58,7 @@ void print_board(void);
 
 uint8_t human_move_turn(char* input);
 uint8_t ai_move_turn(void);
+uint8_t make_black_ai_reply(Move *move);
 
 uint8_t parse_file(char c);
 uint8_t parse_rank(char c);

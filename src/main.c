@@ -117,6 +117,11 @@ static void controller_handle_move(uint16_t input1)
         memcpy(&move, &s_legal_moves[s_selected_move_index], sizeof(move));
         make_move(&move);
         view_draw(the_board);
+        GameStatus black_status = game_status(BLACK);
+        if (black_status != GAME_STATUS_CHECKMATE && black_status != GAME_STATUS_STALEMATE) {
+            ai_move_turn();
+            view_draw(the_board);
+        }
         s_fsm_state = FSM_SELECTING;
         s_selected = find_legal_move_piece(move.to, WHITE, CHESS_DIR_RIGHT);
         if (s_selected != 0xff)
@@ -159,10 +164,6 @@ int main(void) {
         input1_prev = input1;
 
         if(SELECT1) goto exit_game; // TODO: prompt confirm?
-        if(BUTTON1_Y) {
-            ai_move_turn();
-            view_draw(the_board);
-        }
 
         switch (s_fsm_state) {
             case FSM_SELECTING:
