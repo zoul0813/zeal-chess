@@ -417,25 +417,59 @@ uint16_t generate_legal_moves_for_square(uint8_t from, uint8_t side, Move moves[
 
 uint8_t find_legal_move_piece(uint8_t selected, uint8_t side, uint8_t dir)
 {
-    uint8_t row = IS_ON_BOARD(selected) ? (selected & 0x70) : 0;
-    uint8_t col = IS_ON_BOARD(selected) ? (selected & 0x07) : 0;
+    uint8_t selected_rank = IS_ON_BOARD(selected) ? GET_X(selected) : 0;
+    uint8_t selected_file = IS_ON_BOARD(selected) ? GET_Y(selected) : 0;
+    uint8_t best_coord = 0xff;
+    uint8_t best_primary = 0xff;
+    uint8_t best_secondary = 0xff;
     Move moves[1];
 
-    for (uint8_t i = 0; i < 64; i++) {
-        if      (dir == CHESS_DIR_LEFT)  col = (col - 1) & 0x7;
-        else if (dir == CHESS_DIR_RIGHT) col = (col + 1) & 0x7;
-        else if (dir == CHESS_DIR_DOWN)  row = (row - 0x10) & 0x70;
-        else if (dir == CHESS_DIR_UP)    row = (row + 0x10) & 0x70;
+    for (uint8_t coord = 0; coord < 128; coord++) {
+        if (!IS_ON_BOARD(coord))
+            continue;
 
-        uint8_t coord = row | col;
         uint8_t piece = board[coord];
-        if (piece != EMPTY && is_friendly(piece, side) &&
-            generate_legal_moves_for_square(coord, side, moves, 1) > 0) {
-            return coord;
+        if (piece == EMPTY || !is_friendly(piece, side) ||
+            generate_legal_moves_for_square(coord, side, moves, 1) == 0) {
+            continue;
+        }
+
+        uint8_t rank = GET_X(coord);
+        uint8_t file = GET_Y(coord);
+        uint8_t primary;
+        uint8_t secondary;
+
+        if (dir == CHESS_DIR_LEFT) {
+            if (file >= selected_file)
+                continue;
+            primary = selected_file - file;
+            secondary = u16_abs((int16_t)rank - (int16_t)selected_rank);
+        } else if (dir == CHESS_DIR_RIGHT) {
+            if (file <= selected_file)
+                continue;
+            primary = file - selected_file;
+            secondary = u16_abs((int16_t)rank - (int16_t)selected_rank);
+        } else if (dir == CHESS_DIR_DOWN) {
+            if (rank >= selected_rank)
+                continue;
+            primary = selected_rank - rank;
+            secondary = u16_abs((int16_t)file - (int16_t)selected_file);
+        } else {
+            if (rank <= selected_rank)
+                continue;
+            primary = rank - selected_rank;
+            secondary = u16_abs((int16_t)file - (int16_t)selected_file);
+        }
+
+        if (primary < best_primary ||
+            (primary == best_primary && secondary < best_secondary)) {
+            best_coord = coord;
+            best_primary = primary;
+            best_secondary = secondary;
         }
     }
 
-    return 0xff;
+    return best_coord;
 }
 
 void make_move(Move* m)

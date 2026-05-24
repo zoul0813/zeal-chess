@@ -376,6 +376,32 @@ static void test_selection_finds_only_pieces_with_legal_moves(void)
             "selection skips blocked rook and finds knight with legal moves");
 }
 
+static void test_selection_reaches_moved_piece_on_different_rank(void)
+{
+    uint8_t test_board[128];
+
+    clear_board(test_board);
+    board[INDEX(0, 0)] = WHITE | KING;
+    board[INDEX(0, 1)] = WHITE | KNIGHT;
+    board[INDEX(3, 3)] = WHITE | PAWN;
+    board[INDEX(7, 4)] = BLACK | KING;
+
+    require(find_legal_move_piece(INDEX(0, 1), WHITE, CHESS_DIR_RIGHT) == INDEX(3, 3),
+            "selection right reaches movable piece on another rank");
+}
+
+static void test_selection_up_prefers_pawn_above_initial_knights(void)
+{
+    uint8_t test_board[128];
+
+    board_init(test_board);
+
+    require(find_legal_move_piece(INDEX(0, 1), WHITE, CHESS_DIR_UP) == INDEX(1, 1),
+            "selection up from left knight selects pawn above it");
+    require(find_legal_move_piece(INDEX(0, 6), WHITE, CHESS_DIR_UP) == INDEX(1, 6),
+            "selection up from right knight selects pawn above it");
+}
+
 static void test_selection_reports_no_selectable_piece(void)
 {
     uint8_t test_board[128];
@@ -461,6 +487,8 @@ int main(void)
     test_black_ai_reply_api_keeps_graphical_path_off_legacy_turn_loop();
     test_black_ai_reply_stops_on_terminal_status();
     test_selection_finds_only_pieces_with_legal_moves();
+    test_selection_reaches_moved_piece_on_different_rank();
+    test_selection_up_prefers_pawn_above_initial_knights();
     test_selection_reports_no_selectable_piece();
     test_selected_piece_targets_are_legal_only();
     test_selected_piece_target_preview_data_covers_capture_and_promotion();
