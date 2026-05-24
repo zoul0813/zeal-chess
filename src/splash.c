@@ -1,6 +1,5 @@
 /** Intro Splash Screen */
-#include <stdio.h>
-#include <string.h>
+#include <core.h>
 #include <zos_sys.h>
 #include <zos_errors.h>
 #include <zos_vfs.h>
@@ -23,7 +22,7 @@ void splash_init(void) {
         exit(1);
     }
 
-    memset(SPRITES, 0, sizeof(SPRITES));
+    mem_set(SPRITES, 0, sizeof(SPRITES));
     gfx_sprite_render_array(&vctx, 0, SPRITES, GFX_SPRITES_COUNT);
 
     err = load_splash(&vctx);

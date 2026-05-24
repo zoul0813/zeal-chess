@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <string.h>
+#include <core.h>
 
 #include <zos_video.h>
 
@@ -9,8 +8,6 @@
 
 /* FIXME: Why not have a 64-byte board? */
 uint8_t *board;
-
-int fflush_stdout(void);
 
 static uint16_t u16_abs(int16_t value)
 {
@@ -68,7 +65,7 @@ void board_init(uint8_t *the_board)
     board = the_board;
 
     // Clear board
-    memset(board, EMPTY, 128);
+    mem_set(board, EMPTY, 128);
 
     // White pieces (bottom)
     board[INDEX(0, 0)] = WHITE | ROOK;
@@ -118,16 +115,15 @@ void print_board(void)
     // print the horizontal grid label
     bgcolor(TEXT_COLOR_BLACK);
     textcolor(TEXT_COLOR_LIGHT_GRAY);
-    puts("\n    abcdefgh");
+    cputs("\n    abcdefgh\n");
 
     for (int16_t rank = 7; rank >= 0; rank--) {
 
         // print the vertical grid label
         bgcolor(TEXT_COLOR_BLACK);
         textcolor(TEXT_COLOR_LIGHT_GRAY);
-        putchar(CH_SPACE); putchar(CH_SPACE); putchar(CH_SPACE);
-        putchar(rank + 1 + 48);
-        fflush_stdout();
+        cputc(CH_SPACE); cputc(CH_SPACE); cputc(CH_SPACE);
+        cputc(rank + 1 + 48);
 
         for (uint8_t file = 0; file < 8; file++) {
             uint8_t p = board[INDEX(rank, file)];
@@ -140,24 +136,20 @@ void print_board(void)
             }
 
             bgcolor(color);
-            putchar(c);
-            fflush_stdout();
+            cputc(c);
 
             // alternate board cell colors
             if (color == COLOR_LIGHT) color = COLOR_DARK;
             else color = COLOR_LIGHT;
         }
-        fflush_stdout();
-
         // print the vertical grid label
         bgcolor(TEXT_COLOR_BLACK);
         textcolor(TEXT_COLOR_LIGHT_GRAY);
-        putchar(rank + 1 + 48);
-        fflush_stdout();
+        cputc(rank + 1 + 48);
 
         // next row, reset bgcolor since ZVB will clear the line to bgcolor
         bgcolor(TEXT_COLOR_BLACK);
-        putchar(CH_NEWLINE);
+        cputc(CH_NEWLINE);
 
         // alternate board cell colors for next row
         if (color == COLOR_LIGHT) color = COLOR_DARK;
@@ -167,7 +159,7 @@ void print_board(void)
     // print the horizontal grid label
     bgcolor(TEXT_COLOR_BLACK);
     textcolor(TEXT_COLOR_LIGHT_GRAY);
-    puts("    abcdefgh");
+    cputs("    abcdefgh\n");
 }
 
 
@@ -523,7 +515,7 @@ uint8_t pick_best_move(uint8_t side, Move* move)
     Move best_move = {0, 0, 0, 0, 0};
     uint8_t enemy = (side == WHITE) ? BLACK : WHITE;
 
-    memset(ai_moves, 0, sizeof(ai_moves));
+    mem_set(ai_moves, 0, sizeof(ai_moves));
     uint16_t move_count = generate_legal_moves(side, ai_moves, 256);
 
     if (move_count == 0) {

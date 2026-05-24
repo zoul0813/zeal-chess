@@ -1,6 +1,5 @@
-#include <stdio.h>
+#include <core.h>
 #include <stdint.h>
-#include <string.h>
 #include <zos_errors.h>
 #include <zos_vfs.h>
 #include <zos_sys.h>
@@ -47,7 +46,7 @@ static void enter_move_mode(void)
     if (s_legal_move_count == 0)
         return;
 
-    memcpy(s_cpy_board, the_board, sizeof(the_board));
+    mem_cpy(s_cpy_board, the_board, sizeof(the_board));
     s_fsm_state = FSM_MOVING;
     debug = s_selected;
     s_cpy_selected = s_selected;
@@ -60,7 +59,7 @@ static void preview_selected_move(void)
     uint8_t side = move->piece & (WHITE | BLACK);
     uint8_t piece = move->promotion ? (side | move->promotion) : move->piece;
 
-    memcpy(s_cpy_board, the_board, sizeof(the_board));
+    mem_cpy(s_cpy_board, the_board, sizeof(the_board));
     s_cpy_board[move->from] = EMPTY;
     s_cpy_board[move->to] = piece;
     s_cpy_selected = move->to;
@@ -114,7 +113,7 @@ static void controller_handle_move(uint16_t input1)
     } else if (BUTTON1_B) {
         /* Commit the move */
         Move move;
-        memcpy(&move, &s_legal_moves[s_selected_move_index], sizeof(move));
+        mem_cpy(&move, &s_legal_moves[s_selected_move_index], sizeof(move));
         make_move(&move);
         view_draw(the_board);
         GameStatus black_status = game_status(BLACK);

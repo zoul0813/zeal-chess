@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <string.h>
 #include <zos_sys.h>
 #include <zos_vfs.h>
 #include <zvb_gfx.h>
