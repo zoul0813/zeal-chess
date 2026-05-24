@@ -52,19 +52,12 @@ typedef enum {
 
 
 extern uint8_t *board; // 0x88 board, 16x8
-extern uint8_t side_to_move;
 
 void board_init(uint8_t *the_board);
 char piece_char(uint8_t piece);
 void print_board(void);
 
-uint8_t human_move_turn(char* input);
-uint8_t ai_move_turn(void);
 uint8_t make_black_ai_reply(Move *move);
-
-uint8_t parse_file(char c);
-uint8_t parse_rank(char c);
-uint8_t parse_square(const char *s);
 
 uint8_t is_friendly(uint8_t piece, uint8_t side);
 

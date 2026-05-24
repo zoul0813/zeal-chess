@@ -1,20 +1,14 @@
 #include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <zos_errors.h>
 #include <zos_video.h>
-#include <zos_time.h>
 
 #include <conio.h>
 
 #include "chess.h"
-#include "view.h"
 
 /* FIXME: Why not have a 64-byte board? */
 uint8_t *board;
-uint8_t side_to_move = WHITE;
 
 int fflush_stdout(void);
 
@@ -176,110 +170,6 @@ void print_board(void)
     puts("    abcdefgh");
 }
 
-
-uint8_t parse_file(char c)
-{
-    if (c >= 'a' && c <= 'h')
-        return c - 'a';
-    return 0xFF;
-}
-
-uint8_t parse_rank(char c)
-{
-    if (c >= '1' && c <= '8')
-        return c - '1';
-    return 0xFF;
-}
-
-uint8_t parse_square(const char* s)
-{
-    uint8_t file = parse_file(s[0]);
-    uint8_t rank = parse_rank(s[1]);
-    if (file > 7 || rank > 7)
-        return 0xFF;
-    return INDEX(rank, file);
-}
-
-// Handles human (White) move input and execution
-uint8_t human_move_turn(char* input)
-{
-    // Remove trailing newline if present
-    uint16_t len = strlen(input);
-    if (len > 0 && input[len - 1] == '\n') {
-        input[len - 1] = '\0';
-        len--;
-    }
-
-    if (strcmp(input, "quit") == 0) {
-        printf("Exiting move loop.\n");
-        return 0; // stop loop
-    }
-
-    if (len < 4) {
-        printf("Invalid input. Please enter moves like 'e2e4'.\n");
-        return 1; // continue loop
-    }
-
-    uint8_t from = parse_square(&input[0]);
-    uint8_t to   = parse_square(&input[2]);
-
-    if (!IS_ON_BOARD(from) || !IS_ON_BOARD(to)) {
-        printf("Invalid square.\n");
-        return 1;
-    }
-
-    uint8_t piece = board[from];
-
-    if (piece == EMPTY) {
-        printf("No piece at source square.\n");
-        return 1;
-    }
-
-    if (!is_friendly(piece, side_to_move)) {
-        printf("It's White's turn. You can't move that piece.\n");
-        return 1;
-    }
-
-    if (!is_valid_move(from, to, side_to_move)) {
-        printf("Invalid move for that piece.\n");
-        return 1;
-    }
-
-    // Make the player's move
-    board[to]   = piece;
-    board[from] = EMPTY;
-
-    // Pawn promotion check
-    uint8_t side = piece & (WHITE | BLACK);
-    uint8_t rank = to >> 4;
-
-    if ((piece & 7) == PAWN) {
-        if ((side == WHITE && rank == 7) || (side == BLACK && rank == 0)) {
-            board[to] = side | QUEEN; // Promote to queen
-            printf("Pawn promoted to Queen!\n");
-        }
-    }
-
-    return 1;
-}
-
-// Handles AI (Black) move generation and execution
-uint8_t ai_move_turn(void)
-{
-    gotoxy(0, 15);
-    puts("Black thinking");
-
-    Move ai_move;
-    if (!make_black_ai_reply(&ai_move)) {
-        printf("AI has no legal moves. Game over.\n");
-        return 0; // stop loop
-    }
-
-    printf("Black moved from %c%d to %c%d\n", 'a' + (ai_move.from & 7), 1 + (ai_move.from >> 4), 'a' + (ai_move.to & 7),
-           1 + (ai_move.to >> 4));
-
-    return 1;
-}
 
 uint8_t make_black_ai_reply(Move *move)
 {
@@ -624,22 +514,6 @@ int16_t evaluate_board(uint8_t side)
             score -= value;
     }
     return score;
-}
-
-int16_t file_char_to_index(char c)
-{
-    if (c >= 'a' && c <= 'h')
-        return c - 'a';
-    if (c >= 'A' && c <= 'H')
-        return c - 'A';
-    return -1;
-}
-
-int16_t rank_char_to_index(char c)
-{
-    if (c >= '1' && c <= '8')
-        return c - '1';
-    return -1;
 }
 
 static Move ai_moves[256];

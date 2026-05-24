@@ -331,6 +331,23 @@ static void test_black_ai_reply_applies_after_white_commit(void)
     require(is_friendly(board[black_move.to], BLACK), "black reply places black piece on target");
 }
 
+static void test_black_ai_reply_api_keeps_graphical_path_off_legacy_turn_loop(void)
+{
+    uint8_t test_board[128];
+    Move white_move;
+    Move black_move;
+
+    board_init(test_board);
+
+    require(try_make_legal_move(INDEX(1, 3), INDEX(3, 3), WHITE, &white_move),
+            "white graphical commit uses legal move API");
+    require(make_black_ai_reply(&black_move), "black graphical reply uses active AI reply API");
+    require(black_move.piece != EMPTY && is_friendly(black_move.piece, BLACK),
+            "black reply records an active black move");
+    require(board[black_move.from] == EMPTY, "black reply source is empty after active API move");
+    require(is_friendly(board[black_move.to], BLACK), "black reply target contains black piece after active API move");
+}
+
 static void test_black_ai_reply_stops_on_terminal_status(void)
 {
     uint8_t test_board[128];
@@ -441,6 +458,7 @@ int main(void)
     test_ai_never_leaves_black_king_in_check();
     test_ai_reports_no_move_by_status();
     test_black_ai_reply_applies_after_white_commit();
+    test_black_ai_reply_api_keeps_graphical_path_off_legacy_turn_loop();
     test_black_ai_reply_stops_on_terminal_status();
     test_selection_finds_only_pieces_with_legal_moves();
     test_selection_reports_no_selectable_piece();

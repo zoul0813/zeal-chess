@@ -18,8 +18,6 @@
 #define FSM_SELECTING   0
 #define FSM_MOVING      1
 
-static uint8_t continue_loop = 0;
-static char input[16];
 static uint8_t the_board[128];
 static uint8_t s_cpy_board[128];
 static uint8_t the_board_gfx[128];
@@ -121,8 +119,9 @@ static void controller_handle_move(uint16_t input1)
         view_draw(the_board);
         GameStatus black_status = game_status(BLACK);
         if (black_status != GAME_STATUS_CHECKMATE && black_status != GAME_STATUS_STALEMATE) {
+            Move black_move;
             view_show_thinking();
-            ai_move_turn();
+            make_black_ai_reply(&black_move);
             view_draw(the_board);
             view_show_status(WHITE, game_status(WHITE));
         } else {
@@ -182,45 +181,6 @@ int main(void) {
                 break;
         }
     }
-
-    /*
-    while (1) {
-
-        if (side_to_move == WHITE) {
-
-            printf("\nWhite to move or 'quit':\n");
-            clreol();
-            gotoxy(0, 13);
-            if (!fgets(input, sizeof(input), DEV_STDIN)) {
-                printf("Input error or EOF\n");
-                return 0; // stop loop
-            }
-            continue_loop = human_move_turn(input);
-            side_to_move  = BLACK;
-        } else {
-            continue_loop = ai_move_turn();
-            side_to_move  = WHITE;
-        }
-
-        print_board();
-
-        if (is_in_check(side_to_move)) {
-            if (!has_legal_moves(side_to_move)) {
-                printf("%s is in checkmate. Game over!\n", side_to_move == WHITE ? "White" : "Black");
-                break;
-            } else {
-                printf("%s is in check.\n", side_to_move == WHITE ? "White" : "Black");
-            }
-        } else if (!has_legal_moves(side_to_move)) {
-            printf("Stalemate. Game over!\n");
-            break;
-        }
-
-
-        if (!continue_loop)
-            break;
-    }
-    */
 
 exit_game:
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
