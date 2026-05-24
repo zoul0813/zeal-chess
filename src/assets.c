@@ -157,7 +157,7 @@ zos_err_t _load_ztm(gfx_context* ctx, const char* path) {
     return ERR_SUCCESS;
 }
 
-zos_err_t _load_ztp(gfx_context* ctx, const char* path) {
+zos_err_t _load_ztp_at(gfx_context* ctx, const char* path, uint8_t from) {
     zos_err_t err;
     uint16_t size;
     uint8_t buffer[512];
@@ -170,8 +170,12 @@ zos_err_t _load_ztp(gfx_context* ctx, const char* path) {
     err  = read(ztp, buffer, &size);
     if (err) return err;
 
-    err = gfx_palette_load(ctx, buffer, size, 0);
+    err = gfx_palette_load(ctx, buffer, size, from);
     return err;
+}
+
+zos_err_t _load_ztp(gfx_context* ctx, const char* path) {
+    return _load_ztp_at(ctx, path, 0);
 }
 
 zos_err_t load_palette(gfx_context* ctx)
@@ -210,6 +214,24 @@ zos_err_t load_pieces_tileset(gfx_context* ctx)
         .from_byte = TILE_PIECES_START << 7
     };
     err = _load_pieces_zts_chunk(ctx, "assets/pieces.zts", &options);
+
+    return err;
+}
+
+zos_err_t load_font(gfx_context* ctx)
+{
+    gfx_error err;
+
+    err = _load_ztp_at(ctx, "assets/font.ztp", FONT_PALETTE_START);
+    if(err) return err;
+
+    gfx_tileset_options options = {
+        .compression = TILESET_COMP_NONE,
+        .from_byte   = TILE_FONT_START << 7,
+        .pal_offset  = FONT_PALETTE_START,
+        .opacity     = 1,
+    };
+    err = _load_zts_chunk(ctx, "assets/font.zts", &options);
 
     return err;
 }

@@ -6,6 +6,9 @@
 #include <zos_sys.h>
 
 #include <zgdk.h>
+#include <zgdk/ascii.h>
+#include <zgdk/tilemap.h>
+#include <zgdk/utils/print.h>
 
 #include "assets.h"
 #include "view.h"
@@ -36,6 +39,13 @@ void view_init(uint8_t *the_board)
         exit(1);
     }
 
+    if(load_font(&vctx)) {
+        exit(1);
+    }
+    ascii_map('A', 26, TILE_FONT_START);
+    ascii_map('0', 10, TILE_FONT_START + 26);
+    ascii_map(' ', 1, EMPTY_TILE);
+
     if(gfx_tileset_add_color_tile(&vctx, EMPTY_TILE, 0)) {
         exit(1);
     }
@@ -47,7 +57,61 @@ void view_init(uint8_t *the_board)
         exit(1);
     }
 
+    view_clear_status_rows();
     gfx_enable_screen(1);
+}
+
+const char *view_status_text(uint8_t side, GameStatus status, uint8_t thinking)
+{
+    if (thinking) {
+        return "BLACK THINKING";
+    }
+
+    switch (status) {
+        case GAME_STATUS_CHECK:
+            return side == WHITE ? "WHITE CHECK" : "BLACK CHECK";
+        case GAME_STATUS_CHECKMATE:
+            return "CHECKMATE";
+        case GAME_STATUS_STALEMATE:
+            return "STALEMATE";
+        case GAME_STATUS_NORMAL:
+        default:
+            return side == WHITE ? "WHITE TO MOVE" : "BLACK TO MOVE";
+    }
+}
+
+void view_draw_text(uint8_t x, uint8_t y, const char *text)
+{
+    uint8_t len = 0;
+
+    if (!text) {
+        return;
+    }
+
+    while (text[len] && len < WIDTH - x) {
+        len++;
+    }
+
+    nprint_string_layer(&vctx, text, len, LAYER0, x, y);
+}
+
+void view_clear_status_rows(void)
+{
+    tilemap_fill(&vctx, LAYER0, EMPTY_TILE, 0, 0, WIDTH, 2);
+    tilemap_fill(&vctx, LAYER0, EMPTY_TILE, 0, HEIGHT - 2, WIDTH, 2);
+}
+
+void view_show_status(uint8_t side, GameStatus status)
+{
+    view_clear_status_rows();
+    view_draw_text(1, 0, view_status_text(side, status, 0));
+    view_draw_text(1, HEIGHT - 1, "B SELECT");
+}
+
+void view_show_thinking(void)
+{
+    view_clear_status_rows();
+    view_draw_text(1, 0, view_status_text(BLACK, GAME_STATUS_NORMAL, 1));
 }
 
 void view_draw(const uint8_t* board)
@@ -97,7 +161,6 @@ uint8_t view_place_piece(uint8_t x, uint8_t y, uint8_t type, uint8_t color)
         return 0xff;
     }
 
-    const uint8_t y_flipped = 7 - y;
     const uint8_t palette = (PIECES_PALETTE + ((color & 1) ? 1 : 0)) << 4;
     const uint16_t iso_x = 160 + (y - x) * 16;
     const uint16_t iso_y = 172 - (y + x) * 8;

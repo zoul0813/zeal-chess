@@ -69,6 +69,8 @@ static void preview_selected_move(void)
     debug = move->to;
 
     view_draw(s_cpy_board);
+    view_draw_text(1, HEIGHT - 2, "A CANCEL");
+    view_draw_text(1, HEIGHT - 1, "B MOVE");
     view_select_piece(the_board_gfx[move->to]);
 }
 
@@ -119,8 +121,12 @@ static void controller_handle_move(uint16_t input1)
         view_draw(the_board);
         GameStatus black_status = game_status(BLACK);
         if (black_status != GAME_STATUS_CHECKMATE && black_status != GAME_STATUS_STALEMATE) {
+            view_show_thinking();
             ai_move_turn();
             view_draw(the_board);
+            view_show_status(WHITE, game_status(WHITE));
+        } else {
+            view_show_status(BLACK, black_status);
         }
         s_fsm_state = FSM_SELECTING;
         s_selected = find_legal_move_piece(move.to, WHITE, CHESS_DIR_RIGHT);
@@ -131,6 +137,7 @@ static void controller_handle_move(uint16_t input1)
         s_fsm_state = FSM_SELECTING;
         /* Render the former board */
         view_draw(the_board);
+        view_show_status(WHITE, game_status(WHITE));
         view_select_piece(the_board_gfx[s_selected]);
         return;
     }
@@ -153,6 +160,7 @@ int main(void) {
     /* Initialize the view */
     view_init(the_board_gfx);
     view_draw(the_board);
+    view_show_status(WHITE, game_status(WHITE));
 
     s_selected = find_legal_move_piece(INDEX(0, 0), WHITE, CHESS_DIR_RIGHT);
     if (s_selected != 0xff)
