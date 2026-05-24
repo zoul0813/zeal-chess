@@ -11,12 +11,6 @@
 #include "view.h"
 #include "chess.h"
 
-#define GFX_WIDTH           20
-#define GFX_HEIGHT          15
-#define TILE_SIZE           16
-
-
-
 static uint8_t     s_sprite_idx;
 static uint8_t*    s_gfx_board; // 0x88 board, 16x8
 
