@@ -69,7 +69,7 @@ static void preview_selected_move(void)
 
     view_draw(s_cpy_board);
     view_draw_text(1, HEIGHT - 2, "A CANCEL");
-    view_draw_text(1, HEIGHT - 1, "B MOVE");
+    view_draw_text(1, HEIGHT - 1, "B MOVE  ");
     view_select_piece(the_board_gfx[move->to]);
 }
 
