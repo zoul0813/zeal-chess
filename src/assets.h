@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <zos_errors.h>
 #include <zvb_gfx.h>
+#include <zar.h>
 
 #define SCREEN_WIDTH  320
 #define SCREEN_HEIGHT 240
@@ -23,7 +24,10 @@ extern uint8_t _pieces_tileset_end;
 extern const uint16_t s_board_palette[];
 extern const uint8_t s_board_tilemap[];
 extern const uint8_t s_board_tileset[];
+extern zar_file_t asset_file;
 
+
+zos_err_t load_asset_file(const char *path);
 
 zos_err_t load_palette(gfx_context* ctx);
 

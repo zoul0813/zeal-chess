@@ -14,6 +14,8 @@
 #include "view.h"
 #include "splash.h"
 
+zos_err_t load_asset_file(const char *path);
+
 #define FSM_SELECTING   0
 #define FSM_MOVING      1
 
@@ -146,6 +148,9 @@ static void controller_handle_move(uint16_t input1)
 
 
 int main(void) {
+
+    err = load_asset_file("chess.zar");
+    if(err) exit(1);
 
     splash_init();
     splash_show();

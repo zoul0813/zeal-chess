@@ -84,20 +84,15 @@ gif2zeal(${target_name} FILES
 #     VERBOSE
 #     LAYER 0)
 
-copy_assets(${target_name}
-    FILES
-        "build/assets/board.ztp"
-        "build/assets/board.zts"
-        "build/assets/board.ztm"
-        "build/assets/pieces.ztp"
-        "build/assets/pieces.zts"
-        "build/assets/font.zts"
-        "build/assets/font.ztp"
-        "build/assets/splash.ztp"
-        "build/assets/splash.zts"
-        "build/assets/splash.ztm"
+zar_create(${target_name}
+    INPUT assets
+    OUTPUT ${target_name}.zar)
 
-)
+add_dependencies(${target_name}_chess_zar
+    ${target_name}_board_asset
+    ${target_name}_pieces_asset
+    ${target_name}_font_asset
+    ${target_name}_splash_asset)
 
 # -------------------------------
 # Convert to binary

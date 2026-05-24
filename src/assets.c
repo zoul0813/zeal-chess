@@ -6,6 +6,8 @@
 
 #include "assets.h"
 
+zar_file_t asset_file;
+
 /* 4 16-bit colors for the board palette */
 const uint16_t s_board_palette[] = {
     /* 4 colors for the board */
@@ -57,21 +59,43 @@ const uint16_t s_board_palette[] = {
 
 };
 
+zos_err_t load_asset_file(const char *path)
+{
+    return zar_file_open(path, &asset_file);
+}
+
+zos_err_t _load_asset_entry(const char* path, zar_file_entry_t* entry)
+{
+    zos_err_t err = zar_file_entry_from_name(&asset_file, path, entry);
+    return err;
+}
+
+zos_err_t _read_asset_chunk(zar_file_entry_t* entry, uint8_t* buffer, uint16_t* size)
+{
+    zos_err_t err = zar_file_read(&asset_file, entry, buffer, size);
+
+    if (err == ERR_NO_MORE_ENTRIES && *size == 0) {
+        return ERR_SUCCESS;
+    }
+
+    return err;
+}
+
 zos_err_t _load_zts_chunk(gfx_context* ctx, const char* path, gfx_tileset_options* options)
 {
     zos_err_t err;
     uint16_t size;
     uint8_t buffer[1024];
+    zar_file_entry_t entry;
 
-    zos_dev_t dev = open(path, O_RDONLY);
-    if(dev < 0) return -dev;
+    err = _load_asset_entry(path, &entry);
+    if(err) return err;
 
     do {
         size = 1024;
-        err  = read(dev, buffer, &size);
-        if (err != ERR_SUCCESS) {
-            exit(0xFF);
-        }
+        err  = _read_asset_chunk(&entry, buffer, &size);
+        if (err != ERR_SUCCESS) return err;
+
         if (size > 0) {
             uint16_t loaded_size = size;
             err = gfx_tileset_load(ctx, buffer, size, options);
@@ -97,16 +121,16 @@ zos_err_t _load_pieces_zts_chunk(gfx_context* ctx, const char* path, gfx_tileset
     zos_err_t err;
     uint16_t size;
     uint8_t buffer[1024];
+    zar_file_entry_t entry;
 
-    zos_dev_t dev = open(path, O_RDONLY);
-    if(dev < 0) return -dev;
+    err = _load_asset_entry(path, &entry);
+    if(err) return err;
 
     do {
         size = 1024;
-        err  = read(dev, buffer, &size);
-        if (err != ERR_SUCCESS) {
-            exit(0xFF);
-        }
+        err  = _read_asset_chunk(&entry, buffer, &size);
+        if (err != ERR_SUCCESS) return err;
+
         if (size > 0) {
             for (uint16_t i = 0; i < size; i++) {
                 uint8_t hi = buffer[i] >> 4;
@@ -135,12 +159,13 @@ zos_err_t _load_ztm(gfx_context* ctx, const char* path) {
     zos_err_t err;
     uint16_t size;
     uint8_t buffer[WIDTH * HEIGHT];
+    zar_file_entry_t entry;
 
-    zos_dev_t ztm = open(path, O_RDONLY);
-    if (ztm < 0) return -ztm;
+    err = _load_asset_entry(path, &entry);
+    if(err) return err;
 
     size = (WIDTH * HEIGHT);
-    err  = read(ztm, buffer, &size);
+    err  = _read_asset_chunk(&entry, buffer, &size);
     if (err) return err;
 
     if (size > 0) {
@@ -160,13 +185,13 @@ zos_err_t _load_ztp_at(gfx_context* ctx, const char* path, uint8_t from) {
     zos_err_t err;
     uint16_t size;
     uint8_t buffer[512];
+    zar_file_entry_t entry;
 
-    // Load the palette
-    zos_dev_t ztp = open(path, O_RDONLY);
-    if (ztp < 0) return -ztp;
+    err = _load_asset_entry(path, &entry);
+    if(err) return err;
 
     size = 512; // 256 color
-    err  = read(ztp, buffer, &size);
+    err  = _read_asset_chunk(&entry, buffer, &size);
     if (err) return err;
 
     err = gfx_palette_load(ctx, buffer, size, from);
@@ -191,14 +216,14 @@ zos_err_t load_board_tileset(gfx_context* ctx)
     gfx_tileset_options options = {
         .compression = TILESET_COMP_2BIT,
     };
-    err = _load_zts_chunk(ctx, "assets/board.zts", &options);
+    err = _load_zts_chunk(ctx, "board.zts", &options);
     return err;
 }
 
 zos_err_t load_board_tilemap(gfx_context* ctx) {
     zos_err_t err;
 
-    err = _load_ztm(ctx, "assets/board.ztm");
+    err = _load_ztm(ctx, "board.ztm");
 
     return err;
 }
@@ -212,7 +237,7 @@ zos_err_t load_pieces_tileset(gfx_context* ctx)
         // Start at tile 16 (16 * 128);
         .from_byte = TILE_PIECES_START << 7
     };
-    err = _load_pieces_zts_chunk(ctx, "assets/pieces.zts", &options);
+    err = _load_pieces_zts_chunk(ctx, "pieces.zts", &options);
 
     return err;
 }
@@ -221,7 +246,7 @@ zos_err_t load_font(gfx_context* ctx)
 {
     gfx_error err;
 
-    err = _load_ztp_at(ctx, "assets/font.ztp", FONT_PALETTE_START);
+    err = _load_ztp_at(ctx, "font.ztp", FONT_PALETTE_START);
     if(err) return err;
 
     gfx_tileset_options options = {
@@ -230,7 +255,7 @@ zos_err_t load_font(gfx_context* ctx)
         .pal_offset  = FONT_PALETTE_START,
         .opacity     = 1,
     };
-    err = _load_zts_chunk(ctx, "assets/font.zts", &options);
+    err = _load_zts_chunk(ctx, "font.zts", &options);
 
     return err;
 }
@@ -240,14 +265,14 @@ zos_err_t load_splash(gfx_context* ctx)
 {
     gfx_error err;
 
-    err = _load_ztp(ctx, "assets/splash.ztp");
+    err = _load_ztp(ctx, "splash.ztp");
     if(err) return err;
 
     gfx_tileset_options options = {
         .compression = TILESET_COMP_NONE,
         .from_byte   = 0,
     };
-    err = _load_zts_chunk(ctx, "assets/splash.zts", &options);
+    err = _load_zts_chunk(ctx, "splash.zts", &options);
 
     return err;
 }
@@ -256,7 +281,7 @@ zos_err_t load_splash_tilemap(gfx_context* ctx)
 {
     gfx_error err;
 
-    err = _load_ztm(ctx, "assets/splash.ztm");
+    err = _load_ztm(ctx, "splash.ztm");
     if(err) return err;
 
     err = gfx_tileset_add_color_tile(ctx, EMPTY_TILE, 0);
